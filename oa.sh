@@ -23,15 +23,9 @@ show_help() {
     echo "Usage: oa [option]"
     echo ""
     echo "Options:"
-    echo "  ide            Start code-server (browser IDE)"
-    echo "  ide --stop     Stop code-server"
-    echo "  ide --status   Check if code-server is running"
-    echo "  opencode       Start OpenCode"
-    echo "  opencode --stop   Stop OpenCode"
-    echo "  opencode --status Check if OpenCode is running"
     echo "  --update       Update OpenClaw and Android patches"
     echo "  --uninstall    Remove OpenClaw on Android"
-    echo "  --status       Show installation status"
+    echo "  --status       Show installation status and all components"
     echo "  --version, -v  Show version"
     echo "  --help, -h     Show this help message"
     echo ""
@@ -54,107 +48,6 @@ show_version() {
             echo -e "  ${YELLOW}v${latest} available${NC} — run: oa --update"
         fi
     fi
-}
-
-# ── IDE (code-server) ─────────────────────────
-
-cmd_ide() {
-    local subcmd="${1:-start}"
-
-    case "$subcmd" in
-        --stop)
-            if pgrep -f "code-server" &>/dev/null; then
-                pkill -f "code-server"
-                echo -e "${GREEN}[OK]${NC}   code-server stopped"
-            else
-                echo "code-server is not running"
-            fi
-            ;;
-        --status)
-            if pgrep -f "code-server" &>/dev/null; then
-                echo -e "${GREEN}[OK]${NC}   code-server is running"
-                echo "  URL: http://localhost:8080"
-            else
-                echo "code-server is not running"
-                echo "  Start with: oa ide"
-            fi
-            ;;
-        start|"")
-            if ! command -v code-server &>/dev/null; then
-                echo -e "${RED}[FAIL]${NC} code-server not found"
-                echo "  Run 'oa --update' to install it"
-                exit 1
-            fi
-            echo "Starting code-server..."
-            echo "  URL: http://localhost:8080"
-            echo "  Press Ctrl+C to stop"
-            echo ""
-            exec code-server --auth none --bind-addr 0.0.0.0:8080 "$HOME/.openclaw"
-            ;;
-        *)
-            echo -e "${RED}Unknown ide option: $subcmd${NC}"
-            echo "Usage: oa ide [--stop|--status]"
-            exit 1
-            ;;
-    esac
-}
-
-# ── OpenCode ──────────────────────────────────
-
-cmd_opencode() {
-    local subcmd="${1:-start}"
-
-    case "$subcmd" in
-        --stop)
-            if pgrep -f "opencode" &>/dev/null; then
-                pkill -f "ld.so.opencode"
-                echo -e "${GREEN}[OK]${NC}   OpenCode stopped"
-            else
-                echo "OpenCode is not running"
-            fi
-            ;;
-        --status)
-            if pgrep -f "ld.so.opencode" &>/dev/null; then
-                echo -e "${GREEN}[OK]${NC}   OpenCode is running"
-            else
-                echo "OpenCode is not running"
-                echo "  Start with: oa opencode"
-            fi
-
-            echo ""
-            if command -v opencode &>/dev/null; then
-                local oc_ver
-                oc_ver=$(opencode --version 2>/dev/null || echo "installed")
-                echo "  OpenCode:         $oc_ver"
-            else
-                echo -e "  OpenCode:         ${RED}not installed${NC}"
-            fi
-
-            if command -v oh-my-opencode &>/dev/null; then
-                local omo_ver
-                omo_ver=$(oh-my-opencode version 2>/dev/null || oh-my-opencode --version 2>/dev/null || echo "installed")
-                echo "  oh-my-opencode:   $omo_ver"
-            else
-                echo -e "  oh-my-opencode:   ${YELLOW}not installed${NC}"
-            fi
-            ;;
-        start|"")
-            if ! command -v opencode &>/dev/null; then
-                echo -e "${RED}[FAIL]${NC} OpenCode not found"
-                echo "  Run 'oa --update' to install it"
-                exit 1
-            fi
-            echo "Starting OpenCode..."
-            echo "  Press Ctrl+C to stop"
-            echo ""
-            exec opencode
-            ;;
-        *)
-            echo -e "${RED}Unknown opencode option: $subcmd${NC}"
-            echo "Usage: oa opencode [--stop|--status]"
-            exit 1
-            ;;
-    esac
 }
 
 # ── Update ────────────────────────────────────
@@ -231,8 +124,8 @@ cmd_status() {
         echo -e "  npm:         ${RED}not installed${NC}"
     fi
 
-    if command -v clawhub &>/dev/null; then
-        echo "  clawhub:     $(clawhub --version 2>/dev/null || echo 'installed')"
+    if command -v clawhub &>/dev/null || command -v clawdhub &>/dev/null; then
+        echo "  clawhub:     $(clawhub --version 2>/dev/null || clawdhub --version 2>/dev/null || echo 'installed')"
     else
         echo -e "  clawhub:     ${YELLOW}not installed${NC}"
     fi
@@ -247,6 +140,22 @@ cmd_status() {
         echo "  code-server: ${cs_ver:-installed} ($cs_status)"
     else
         echo -e "  code-server: ${YELLOW}not installed${NC}"
+    fi
+
+    if command -v ttyd &>/dev/null; then
+        local ttyd_ver
+        ttyd_ver=$(ttyd --version 2>/dev/null | head -1 || echo "installed")
+        echo "  ttyd:        ${ttyd_ver}"
+    else
+        echo -e "  ttyd:        ${YELLOW}not installed${NC}"
+    fi
+
+    if command -v dufs &>/dev/null; then
+        local dufs_ver
+        dufs_ver=$(dufs --version 2>/dev/null | head -1 || echo "installed")
+        echo "  dufs:        ${dufs_ver}"
+    else
+        echo -e "  dufs:        ${YELLOW}not installed${NC}"
     fi
 
     if command -v opencode &>/dev/null; then
@@ -391,14 +300,6 @@ cmd_status() {
 # ── Main dispatch ─────────────────────────────
 
 case "${1:-}" in
-    ide)
-        shift
-        cmd_ide "${1:-start}"
-        ;;
-    opencode)
-        shift
-        cmd_opencode "${1:-start}"
-        ;;
     --update)
         cmd_update
         ;;

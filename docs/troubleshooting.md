@@ -122,6 +122,8 @@ Or fully close and reopen the Termux app.
 Error: Cannot find module '/data/data/com.termux/files/home/.openclaw-lite/patches/glibc-compat.js'
 ```
 
+> **Note**: This issue only affects pre-1.0.0 (Bionic) installations. In v1.0.0+ (glibc), `glibc-compat.js` is loaded by the node wrapper script, not `NODE_OPTIONS`.
+
 ### Cause
 
 The `NODE_OPTIONS` environment variable in `~/.bashrc` still references the old installation path (`.openclaw-lite`). This happens when updating from an older version where the project was named "OpenClaw Lite".
@@ -174,7 +176,9 @@ Reason: global update
 
 ### Cause
 
-When `openclaw update` runs npm to update the package, it spawns npm as a subprocess. The Termux-specific build environment variables required to compile `sharp`'s native module (`CXXFLAGS`, `GYP_DEFINES`, `CPATH`) are set in `~/.bashrc` but are not automatically available in that subprocess context.
+**v1.0.0+ (glibc)**: The `sharp` module uses prebuilt binaries (`@img/sharp-linux-arm64`) that load natively under the glibc environment. This error is rare — it typically means the prebuilt binary is missing or corrupted.
+
+**Pre-1.0.0 (Bionic)**: When `openclaw update` ran npm as a subprocess, the Termux-specific build environment variables (`CXXFLAGS`, `GYP_DEFINES`) were not available in the subprocess context, causing the native module compilation to fail.
 
 ### Impact
 
@@ -188,7 +192,7 @@ After the update, manually rebuild `sharp` using the provided script:
 bash ~/.openclaw-android/scripts/build-sharp.sh
 ```
 
-Alternatively, use `oa --update` instead of `openclaw update` — it sets the required environment variables and rebuilds sharp automatically:
+Alternatively, use `oa --update` instead of `openclaw update` — it handles sharp automatically:
 
 ```bash
 oa --update && source ~/.bashrc
@@ -224,32 +228,77 @@ cd $(npm root -g)/clawdhub && npm install undici
 Gateway status failed: Error: Gateway service install not supported on android
 ```
 
+> **Note**: This issue only affects pre-1.0.0 (Bionic) installations. In v1.0.0+ (glibc), Node.js natively reports `process.platform` as `'linux'`, so this error does not occur.
+
 ### Cause
 
-The `process.platform` override in `glibc-compat.js` is not being applied.
+**Pre-1.0.0 (Bionic)**: The `process.platform` override in `glibc-compat.js` is not being applied because `NODE_OPTIONS` is not set.
 
 ### Solution
 
-Check if the `NODE_OPTIONS` environment variable is set:
-
-```bash
-echo $NODE_OPTIONS
-```
-
-If empty, load the environment:
-
-```bash
-source ~/.bashrc
-```
-
-If `NODE_OPTIONS` is set but the error persists, check if the file is up to date:
+Check which Node.js is being used:
 
 ```bash
 node -e "console.log(process.platform)"
 ```
 
-If it prints `android`, the file is outdated. Reinstall:
+If it prints `android`, the glibc node wrapper is not being used. Load the environment:
 
 ```bash
-curl -sL myopenclawhub.com/install | bash
+source ~/.bashrc
+```
+
+If it still prints `android`, update to the latest version (v1.0.0+ uses glibc and resolves this permanently):
+
+```bash
+oa --update && source ~/.bashrc
+```
+
+## `openclaw update` fails with node-llama-cpp build error
+
+```
+[node-llama-cpp] Cloning ggml-org/llama.cpp (local bundle)
+npm error 48%
+Update Result: ERROR
+```
+
+### Cause
+
+When OpenClaw updates via npm, `node-llama-cpp`'s postinstall script attempts to clone and compile `llama.cpp` from source. This fails on Termux because the build toolchain (`cmake`, `clang`) is linked against Bionic, while Node.js runs under glibc — the two are incompatible for native compilation.
+
+### Impact
+
+**This error is harmless.** The prebuilt `node-llama-cpp` binaries (`@node-llama-cpp/linux-arm64`) are already installed and work correctly under the glibc environment. The failed source build does not overwrite them.
+
+Node-llama-cpp is used for optional local embeddings. If the prebuilt binaries don't load, OpenClaw automatically falls back to remote embedding providers (OpenAI, Gemini, etc.).
+
+### Solution
+
+No action needed. The error can be safely ignored. To verify that the prebuilt binaries are working:
+
+```bash
+node -e "require('$(npm root -g)/openclaw/node_modules/@node-llama-cpp/linux-arm64/bins/linux-arm64/llama-addon.node'); console.log('OK')"
+```
+
+## OpenCode install shows EACCES permission errors
+
+```
+EACCES: Permission denied while installing opencode-ai
+Failed to install 118 packages
+```
+
+### Cause
+
+Bun attempts to create hardlinks and symlinks when installing packages. Android's filesystem restricts these operations, causing `EACCES` errors for dependency packages.
+
+### Impact
+
+**These errors are harmless.** The main binaries (`opencode`, `oh-my-opencode`) are installed correctly despite the dependency link failures. The ld.so concatenation and proot wrapper handle execution.
+
+### Solution
+
+No action needed. Verify that OpenCode works:
+
+```bash
+opencode --version
 ```

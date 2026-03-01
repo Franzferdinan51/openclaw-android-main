@@ -13,6 +13,7 @@ echo ""
 
 # Update and upgrade package repos
 echo "Updating package repositories..."
+echo "  (This may take a minute depending on mirror speed)"
 pkg update -y
 pkg upgrade -y
 
@@ -33,6 +34,7 @@ PACKAGES=(
 )
 
 echo "Installing packages: ${PACKAGES[*]}"
+echo "  (This may take a few minutes depending on network speed)"
 pkg install -y "${PACKAGES[@]}"
 
 echo ""

@@ -22,7 +22,7 @@ echo ""
 
 step() {
     echo ""
-    echo -e "${BOLD}[$1/10] $2${NC}"
+    echo -e "${BOLD}[$1/11] $2${NC}"
     echo "----------------------------------------"
 }
 
@@ -81,6 +81,11 @@ cp "$SCRIPT_DIR/update.sh" "$PREFIX/bin/oaupdate"
 chmod +x "$PREFIX/bin/oaupdate"
 echo -e "${GREEN}[OK]${NC}   oaupdate command installed"
 
+# Copy uninstall.sh to openclaw-android directory (for oa --uninstall)
+cp "$SCRIPT_DIR/uninstall.sh" "$HOME/.openclaw-android/uninstall.sh"
+chmod +x "$HOME/.openclaw-android/uninstall.sh"
+echo -e "${GREEN}[OK]${NC}   uninstall.sh installed"
+
 # Set CPATH for native module builds (sharp needs glib-2.0 headers)
 # These are in Termux-specific subdirectories that compilers don't search by default
 export CPATH="$PREFIX/include/glib-2.0:$PREFIX/lib/glib-2.0/include"
@@ -90,9 +95,8 @@ echo "Running: npm install -g openclaw@latest --ignore-scripts"
 echo "This may take several minutes..."
 echo ""
 
-# Use --ignore-scripts to skip native module builds that may fail on Termux
-# (e.g. koffi uses renameat2 which is unavailable in Android's Bionic headers).
-# sharp will be rebuilt separately in step 7 via build-sharp.sh.
+# Use --ignore-scripts to skip postinstall scripts that attempt native compilation.
+# Prebuilt binaries (sharp, koffi, node-llama-cpp) are used instead.
 npm install -g openclaw@latest --ignore-scripts
 
 echo ""
@@ -137,20 +141,50 @@ else
 fi
 
 # ─────────────────────────────────────────────
-step 8 "Installing OpenCode + oh-my-opencode"
-if bash "$SCRIPT_DIR/scripts/install-opencode.sh"; then
-    echo -e "${GREEN}[OK]${NC}   OpenCode installation step complete"
-else
-    echo -e "${YELLOW}[WARN]${NC} OpenCode installation failed (non-critical)"
+step 8 "Installing OpenCode (Optional)"
+
+OPENCODE_FLAGS=""
+SKIP_OPENCODE=false
+if [ -t 0 ]; then
+    echo ""
+    read -rp "Install OpenCode (AI coding assistant)? [Y/n] " REPLY
+    if [[ "$REPLY" =~ ^[Nn]$ ]]; then
+        SKIP_OPENCODE=true
+        echo -e "${YELLOW}[SKIP]${NC} Skipping OpenCode installation"
+    else
+        read -rp "Install oh-my-opencode (OpenCode plugin framework)? [Y/n] " REPLY
+        if [[ "$REPLY" =~ ^[Nn]$ ]]; then
+            OPENCODE_FLAGS="--no-omo"
+        fi
+    fi
+fi
+
+if [ "$SKIP_OPENCODE" = false ]; then
+    if bash "$SCRIPT_DIR/scripts/install-opencode.sh" $OPENCODE_FLAGS; then
+        echo -e "${GREEN}[OK]${NC}   OpenCode installation step complete"
+    else
+        echo -e "${YELLOW}[WARN]${NC} OpenCode installation failed (non-critical)"
+    fi
 fi
 
 # ─────────────────────────────────────────────
-step 9 "Verifying Installation"
+step 9 "AI CLI Tools (Optional)"
+
+# AI tools installer has its own tty detection — skips automatically in non-interactive mode
+if [ -f "$SCRIPT_DIR/scripts/install-ai-tools.sh" ]; then
+    bash "$SCRIPT_DIR/scripts/install-ai-tools.sh" || true
+else
+    echo -e "${YELLOW}[SKIP]${NC} install-ai-tools.sh not found"
+fi
+
+# ─────────────────────────────────────────────
+step 10 "Verifying Installation"
 bash "$SCRIPT_DIR/tests/verify-install.sh"
 
 # ─────────────────────────────────────────────
-step 10 "Updating OpenClaw"
+step 11 "Updating OpenClaw"
 echo "Running: openclaw update"
+echo "  (This includes building native modules and may take 5-10 minutes)"
 echo ""
 openclaw update || true
 
@@ -167,8 +201,6 @@ echo ""
 echo -e "${BOLD}Manage with the 'oa' command:${NC}"
 echo "  oa --update       Update OpenClaw and patches"
 echo "  oa --status       Show installation status"
-echo "  oa ide            Start code-server (browser IDE)"
-echo "  oa opencode       Start OpenCode"
 echo "  oa --uninstall    Remove OpenClaw on Android"
 echo "  oa --help         Show all options"
 echo ""

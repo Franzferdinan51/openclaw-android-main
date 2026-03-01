@@ -23,7 +23,7 @@ echo ""
 
 step() {
     echo ""
-    echo -e "${BOLD}[$1/9] $2${NC}"
+    echo -e "${BOLD}[$1/10] $2${NC}"
     echo "----------------------------------------"
 }
 
@@ -207,6 +207,14 @@ WRAPPER
 chmod +x "$PREFIX/bin/oaupdate"
 echo -e "${GREEN}[OK]${NC}   oaupdate command updated (→ oa --update)"
 
+# Download uninstall.sh (for oa --uninstall)
+if curl -sfL "$REPO_BASE/uninstall.sh" -o "$OPENCLAW_DIR/uninstall.sh"; then
+    chmod +x "$OPENCLAW_DIR/uninstall.sh"
+    echo -e "${GREEN}[OK]${NC}   uninstall.sh updated"
+else
+    echo -e "${YELLOW}[WARN]${NC} Failed to download uninstall.sh (non-critical)"
+fi
+
 # Download argon2-stub.js (needed for code-server)
 if curl -sfL "$REPO_BASE/patches/argon2-stub.js" -o "$OPENCLAW_DIR/patches/argon2-stub.js"; then
     echo -e "${GREEN}[OK]${NC}   argon2-stub.js updated"
@@ -272,37 +280,37 @@ else
     echo -e "${YELLOW}[WARN]${NC} Failed to create temporary file for install-opencode.sh (non-critical)"
 fi
 
-# Download install-ai-tools.sh
-AI_TOOLS_TMPFILE=""
-if AI_TOOLS_TMPFILE=$(mktemp "$PREFIX/tmp/install-ai-tools.XXXXXX.sh" 2>/dev/null); then
-    if curl -sfL "$REPO_BASE/scripts/install-ai-tools.sh" -o "$AI_TOOLS_TMPFILE"; then
-        chmod +x "$AI_TOOLS_TMPFILE"
-        echo -e "${GREEN}[OK]${NC}   install-ai-tools.sh downloaded"
-    else
-        echo -e "${YELLOW}[WARN]${NC} Failed to download install-ai-tools.sh (non-critical)"
-        rm -f "$AI_TOOLS_TMPFILE"
-        AI_TOOLS_TMPFILE=""
-    fi
-else
-    echo -e "${YELLOW}[WARN]${NC} Failed to create temporary file for install-ai-tools.sh (non-critical)"
-fi
-
 # ─────────────────────────────────────────────
 step 4 "Updating Environment Variables"
 
-# Run setup-env.sh to refresh .bashrc block (now glibc-based)
-bash "$TMPFILE"
-rm -f "$TMPFILE"
-
-# Re-export for current session (setup-env.sh runs as subprocess, exports don't propagate)
 GLIBC_NODE_DIR="$OPENCLAW_DIR/node"
-export PATH="$GLIBC_NODE_DIR/bin:$HOME/.local/bin:$PATH"
-export TMPDIR="$PREFIX/tmp"
-export TMP="$TMPDIR"
-export TEMP="$TMPDIR"
-export CONTAINER=1
-export CLAWDHUB_WORKDIR="$HOME/.openclaw/workspace"
-export OA_GLIBC=1
+
+if [ "$IS_GLIBC" = true ]; then
+    # Already on glibc — refresh env vars immediately
+    bash "$TMPFILE"
+    rm -f "$TMPFILE"
+
+    # Re-export for current session (setup-env.sh runs as subprocess, exports don't propagate)
+    export PATH="$GLIBC_NODE_DIR/bin:$HOME/.local/bin:$PATH"
+    export TMPDIR="$PREFIX/tmp"
+    export TMP="$TMPDIR"
+    export TEMP="$TMPDIR"
+    export CONTAINER=1
+    export CLAWDHUB_WORKDIR="$HOME/.openclaw/workspace"
+    export OA_GLIBC=1
+else
+    # Bionic → defer .bashrc update until glibc migration succeeds (Step 4.5)
+    # If we update .bashrc now and glibc install fails, NODE_OPTIONS="-r bionic-compat.js"
+    # will be removed while the Bionic node still needs it for os.cpus()/networkInterfaces().
+    echo -e "${YELLOW}[DEFER]${NC} .bashrc update deferred until glibc migration completes"
+
+    # Export only safe vars that work with both architectures
+    export TMPDIR="$PREFIX/tmp"
+    export TMP="$TMPDIR"
+    export TEMP="$TMPDIR"
+    export CONTAINER=1
+    export CLAWDHUB_WORKDIR="$HOME/.openclaw/workspace"
+fi
 
 # ─────────────────────────────────────────────
 # Step 4.5: Migrate from Bionic to glibc (if needed)
@@ -329,7 +337,7 @@ if [ "$IS_GLIBC" = false ]; then
         echo -e "${YELLOW}[WARN]${NC} install-glibc-env.sh not available — skipping migration"
     fi
 
-    # Clean up old Bionic-specific files
+    # Clean up old Bionic-specific files and apply deferred .bashrc update
     if [ "$IS_GLIBC" = true ]; then
         echo ""
         echo "Cleaning up old Bionic files..."
@@ -341,10 +349,22 @@ if [ "$IS_GLIBC" = false ]; then
         unset CFLAGS 2>/dev/null || true
         unset CPATH 2>/dev/null || true
 
-        # Re-export glibc PATH (now that glibc node is installed)
+        # NOW safe to update .bashrc with glibc env vars (glibc node is installed)
+        if [ -f "$TMPFILE" ]; then
+            bash "$TMPFILE"
+            rm -f "$TMPFILE"
+            echo -e "${GREEN}[OK]${NC}   .bashrc updated with glibc environment"
+        fi
+
+        # Re-export glibc env for current session
         export PATH="$GLIBC_NODE_DIR/bin:$HOME/.local/bin:$PATH"
+        export OA_GLIBC=1
 
         echo -e "${GREEN}[OK]${NC}   Bionic → glibc migration complete"
+    else
+        # Migration failed — keep old Bionic .bashrc intact for safety
+        rm -f "$TMPFILE"
+        echo -e "${YELLOW}[INFO]${NC} Keeping existing .bashrc (Bionic environment preserved)"
     fi
 fi
 
@@ -387,8 +407,9 @@ OPENCLAW_UPDATED=false
 if [ -n "$CURRENT_VER" ] && [ -n "$LATEST_VER" ] && [ "$CURRENT_VER" = "$LATEST_VER" ]; then
     echo -e "${GREEN}[OK]${NC}   openclaw $CURRENT_VER is already the latest"
 else
-    echo "Updating openclaw npm package... ($CURRENT_VER → $LATEST_VER)"
-    if npm install -g openclaw@latest --no-fund --no-audit --ignore-scripts; then
+echo "Updating openclaw npm package... ($CURRENT_VER → $LATEST_VER)"
+echo "  (This may take several minutes depending on network speed)"
+if npm install -g openclaw@latest --no-fund --no-audit --ignore-scripts; then
         echo -e "${GREEN}[OK]${NC}   openclaw package updated"
         OPENCLAW_UPDATED=true
     else
@@ -481,30 +502,105 @@ else
 fi
 
 # ─────────────────────────────────────────────
-step 9 "Installing OpenCode + oh-my-opencode"
+step 9 "Updating AI CLI Tools"
 
-if [ "$IS_GLIBC" = true ] && [ -n "${OPENCODE_TMPFILE:-}" ]; then
-    if bash "$OPENCODE_TMPFILE"; then
-        echo -e "${GREEN}[OK]${NC}   OpenCode update step complete"
-    else
-        echo -e "${YELLOW}[WARN]${NC} OpenCode installation/update failed (non-critical)"
+# Helper: check and update a single AI CLI tool (version-aware)
+update_ai_tool() {
+    local cmd="$1"
+    local pkg="$2"
+    local label="$3"
+
+    if ! command -v "$cmd" &>/dev/null; then
+        return 1
     fi
-    rm -f "$OPENCODE_TMPFILE"
-elif [ "$IS_GLIBC" = false ]; then
-    echo -e "${YELLOW}[SKIP]${NC} OpenCode requires glibc architecture — run 'oa --update' after migration"
-    [ -n "${OPENCODE_TMPFILE:-}" ] && rm -f "$OPENCODE_TMPFILE"
-else
-    echo -e "${YELLOW}[SKIP]${NC} install-opencode.sh was not downloaded"
+
+    local current_ver latest_ver
+    current_ver=$(npm list -g "$pkg" 2>/dev/null | grep "${pkg##*/}@" | sed 's/.*@//' | tr -d '[:space:]')
+    latest_ver=$(npm view "$pkg" version 2>/dev/null || echo "")
+
+    if [ -n "$current_ver" ] && [ -n "$latest_ver" ] && [ "$current_ver" = "$latest_ver" ]; then
+        echo -e "${GREEN}[OK]${NC}   $label $current_ver is already the latest"
+    elif [ -n "$latest_ver" ]; then
+        echo "Updating $label... ($current_ver → $latest_ver)"
+        echo "  (This may take a few minutes depending on network speed)"
+        if npm install -g "$pkg@latest" --no-fund --no-audit; then
+            echo -e "${GREEN}[OK]${NC}   $label updated"
+        else
+            echo -e "${YELLOW}[WARN]${NC} $label update failed (non-critical)"
+        fi
+    else
+        echo -e "${YELLOW}[WARN]${NC} Could not check $label latest version"
+    fi
+    return 0
+}
+
+AI_FOUND=false
+update_ai_tool "claude" "@anthropic-ai/claude-code" "Claude Code" && AI_FOUND=true
+update_ai_tool "gemini" "@google/gemini-cli" "Gemini CLI" && AI_FOUND=true
+update_ai_tool "codex" "@openai/codex" "Codex CLI" && AI_FOUND=true
+
+if [ "$AI_FOUND" = false ]; then
+    echo -e "${YELLOW}[SKIP]${NC} No AI CLI tools installed"
 fi
 
-# AI Tools (Optional)
-echo ""
-if [ -n "${AI_TOOLS_TMPFILE:-}" ]; then
-    bash "$AI_TOOLS_TMPFILE" || true
-    rm -f "$AI_TOOLS_TMPFILE"
+# ─────────────────────────────────────────────
+step 10 "Updating OpenCode + oh-my-opencode"
+
+# Detect what's already installed
+OPENCODE_INSTALLED=false
+OMO_INSTALLED=false
+[ -f "$PREFIX/bin/opencode" ] && OPENCODE_INSTALLED=true
+[ -f "$PREFIX/bin/oh-my-opencode" ] && OMO_INSTALLED=true
+
+if [ "$OPENCODE_INSTALLED" = true ]; then
+    # Already installed → update automatically (no prompt needed)
+    OPENCODE_FLAGS=""
+    [ "$OMO_INSTALLED" = false ] && OPENCODE_FLAGS="--no-omo"
+
+    echo "OpenCode is installed — checking for updates..."
+    if [ "$IS_GLIBC" = true ] && [ -n "${OPENCODE_TMPFILE:-}" ]; then
+        echo "  (This may take a few minutes for package download and binary processing)"
+        if bash "$OPENCODE_TMPFILE" $OPENCODE_FLAGS; then
+            echo -e "${GREEN}[OK]${NC}   OpenCode update complete"
+        else
+            echo -e "${YELLOW}[WARN]${NC} OpenCode update failed (non-critical)"
+        fi
+    elif [ "$IS_GLIBC" = false ]; then
+        echo -e "${YELLOW}[SKIP]${NC} OpenCode requires glibc architecture"
+    else
+        echo -e "${YELLOW}[SKIP]${NC} install-opencode.sh was not downloaded"
+    fi
 else
-    echo -e "${YELLOW}[SKIP]${NC} install-ai-tools.sh was not downloaded"
+    # Not installed → ask if user wants to install (only in interactive mode)
+    if [ -t 0 ]; then
+        echo ""
+        read -rp "OpenCode is not installed. Install it? [y/N] " REPLY
+        if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+            OPENCODE_FLAGS=""
+            read -rp "Also install oh-my-opencode (plugin framework)? [Y/n] " REPLY
+            [[ "$REPLY" =~ ^[Nn]$ ]] && OPENCODE_FLAGS="--no-omo"
+
+            if [ "$IS_GLIBC" = true ] && [ -n "${OPENCODE_TMPFILE:-}" ]; then
+                echo "  (This may take a few minutes)"
+                if bash "$OPENCODE_TMPFILE" $OPENCODE_FLAGS; then
+                    echo -e "${GREEN}[OK]${NC}   OpenCode installed"
+                else
+                    echo -e "${YELLOW}[WARN]${NC} OpenCode installation failed (non-critical)"
+                fi
+            elif [ "$IS_GLIBC" = false ]; then
+                echo -e "${YELLOW}[SKIP]${NC} OpenCode requires glibc architecture"
+            else
+                echo -e "${YELLOW}[SKIP]${NC} install-opencode.sh was not downloaded"
+            fi
+        else
+            echo -e "${YELLOW}[SKIP]${NC} Skipping OpenCode"
+        fi
+    else
+        echo -e "${YELLOW}[SKIP]${NC} OpenCode not installed (non-interactive mode)"
+    fi
 fi
+
+[ -n "${OPENCODE_TMPFILE:-}" ] && rm -f "$OPENCODE_TMPFILE"
 
 echo ""
 echo -e "${BOLD}========================================${NC}"
@@ -519,8 +615,6 @@ echo ""
 echo -e "${BOLD}Manage with the 'oa' command:${NC}"
 echo "  oa --update       Update OpenClaw and patches"
 echo "  oa --status       Show installation status"
-echo "  oa ide            Start code-server (browser IDE)"
-echo "  oa opencode       Start OpenCode"
 echo "  oa --uninstall    Remove OpenClaw on Android"
 echo "  oa --help         Show all options"
 echo ""

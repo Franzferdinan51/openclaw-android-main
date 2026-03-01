@@ -59,40 +59,41 @@ rmdir "$HOME/.local/bin" 2>/dev/null || true
 rmdir "$HOME/.local/lib" 2>/dev/null || true
 rmdir "$HOME/.local" 2>/dev/null || true
 
-# 3. Stop and remove OpenCode / oh-my-opencode
-echo ""
-echo "Removing OpenCode + oh-my-opencode..."
+# 3. Optionally remove OpenCode / oh-my-opencode
+OPENCODE_INSTALLED=false
+OMO_INSTALLED=false
+[ -f "$PREFIX/bin/opencode" ] || [ -f "$PREFIX/tmp/ld.so.opencode" ] && OPENCODE_INSTALLED=true
+[ -f "$PREFIX/bin/oh-my-opencode" ] || [ -f "$PREFIX/tmp/ld.so.omo" ] && OMO_INSTALLED=true
 
-# Stop OpenCode if running
-if pgrep -f "ld.so.opencode" &>/dev/null; then
-    pkill -f "ld.so.opencode" 2>/dev/null || true
-    echo -e "${GREEN}[OK]${NC}   Stopped running OpenCode"
+if [ "$OPENCODE_INSTALLED" = true ]; then
+    echo ""
+    read -rp "Remove OpenCode (AI coding assistant)? [Y/n] " REPLY
+    if [[ ! "$REPLY" =~ ^[Nn]$ ]]; then
+        # Stop OpenCode if running
+        if pgrep -f "ld.so.opencode" &>/dev/null; then
+            pkill -f "ld.so.opencode" 2>/dev/null || true
+            echo -e "${GREEN}[OK]${NC}   Stopped running OpenCode"
+        fi
+        [ -f "$PREFIX/tmp/ld.so.opencode" ] && rm -f "$PREFIX/tmp/ld.so.opencode" && echo -e "${GREEN}[OK]${NC}   Removed ld.so.opencode"
+        [ -f "$PREFIX/bin/opencode" ] && rm -f "$PREFIX/bin/opencode" && echo -e "${GREEN}[OK]${NC}   Removed opencode wrapper"
+        [ -d "$HOME/.config/opencode" ] && rm -rf "$HOME/.config/opencode" && echo -e "${GREEN}[OK]${NC}   Removed ~/.config/opencode"
+    else
+        echo -e "${YELLOW}[KEEP]${NC} Keeping OpenCode"
+    fi
 fi
 
-# Remove ld.so concatenation files
-for ldso_file in "$PREFIX/tmp/ld.so.opencode" "$PREFIX/tmp/ld.so.omo"; do
-    if [ -f "$ldso_file" ]; then
-        rm -f "$ldso_file"
-        echo -e "${GREEN}[OK]${NC}   Removed $ldso_file"
+if [ "$OMO_INSTALLED" = true ]; then
+    read -rp "Remove oh-my-opencode (OpenCode plugin framework)? [Y/n] " REPLY
+    if [[ ! "$REPLY" =~ ^[Nn]$ ]]; then
+        [ -f "$PREFIX/tmp/ld.so.omo" ] && rm -f "$PREFIX/tmp/ld.so.omo" && echo -e "${GREEN}[OK]${NC}   Removed ld.so.omo"
+        [ -f "$PREFIX/bin/oh-my-opencode" ] && rm -f "$PREFIX/bin/oh-my-opencode" && echo -e "${GREEN}[OK]${NC}   Removed oh-my-opencode wrapper"
+    else
+        echo -e "${YELLOW}[KEEP]${NC} Keeping oh-my-opencode"
     fi
-done
-
-# Remove wrapper scripts
-for wrapper in "$PREFIX/bin/opencode" "$PREFIX/bin/oh-my-opencode"; do
-    if [ -f "$wrapper" ]; then
-        rm -f "$wrapper"
-        echo -e "${GREEN}[OK]${NC}   Removed $wrapper"
-    fi
-done
-
-# Remove OpenCode config
-if [ -d "$HOME/.config/opencode" ]; then
-    rm -rf "$HOME/.config/opencode"
-    echo -e "${GREEN}[OK]${NC}   Removed ~/.config/opencode"
 fi
 
-# Remove Bun installation (used to install OpenCode packages)
-if [ -d "$HOME/.bun" ]; then
+# Remove Bun if both OpenCode and oh-my-opencode are gone
+if [ ! -f "$PREFIX/bin/opencode" ] && [ ! -f "$PREFIX/bin/oh-my-opencode" ] && [ -d "$HOME/.bun" ]; then
     rm -rf "$HOME/.bun"
     echo -e "${GREEN}[OK]${NC}   Removed ~/.bun"
 fi
@@ -124,43 +125,86 @@ if command -v pacman &>/dev/null; then
     fi
 fi
 
-# 6. Remove openclaw-android directory (includes node, proot-root, patches, .glibc-arch)
-if [ -d "$HOME/.openclaw-android" ]; then
-    rm -rf "$HOME/.openclaw-android"
-    echo -e "${GREEN}[OK]${NC}   Removed $HOME/.openclaw-android"
-else
-    echo -e "${YELLOW}[SKIP]${NC} $HOME/.openclaw-android not found"
-fi
-
-# 7. Remove environment block from .bashrc
+# 6. Remove environment block from .bashrc
 BASHRC="$HOME/.bashrc"
 MARKER_START="# >>> OpenClaw on Android >>>"
 MARKER_END="# <<< OpenClaw on Android <<<"
 
 if [ -f "$BASHRC" ] && grep -qF "$MARKER_START" "$BASHRC"; then
     sed -i "/${MARKER_START//\//\\/}/,/${MARKER_END//\//\\/}/d" "$BASHRC"
-    # Collapse consecutive blank lines left behind (preserve intentional single blank lines)
+    # Collapse consecutive blank lines left behind
     sed -i '/^$/{ N; /^\n$/d }' "$BASHRC"
     echo -e "${GREEN}[OK]${NC}   Removed environment block from $BASHRC"
 else
     echo -e "${YELLOW}[SKIP]${NC} No environment block found in $BASHRC"
 fi
 
-# 8. Clean up temp directory
+# 7. Clean up temp directory
 if [ -d "$PREFIX/tmp/openclaw" ]; then
     rm -rf "$PREFIX/tmp/openclaw"
     echo -e "${GREEN}[OK]${NC}   Removed $PREFIX/tmp/openclaw"
 fi
 
-# 9. Optionally remove openclaw data
+# ─────────────────────────────────────────────
+# Optional removal prompts
+# ─────────────────────────────────────────────
+
+# 8. Optionally remove openclaw-android directory
 echo ""
+if [ -d "$HOME/.openclaw-android" ]; then
+    read -rp "Remove installation directory (~/.openclaw-android)? Includes Node.js, patches, configs. [Y/n] " REPLY
+    if [[ ! "$REPLY" =~ ^[Nn]$ ]]; then
+        rm -rf "$HOME/.openclaw-android"
+        echo -e "${GREEN}[OK]${NC}   Removed $HOME/.openclaw-android"
+    else
+        echo -e "${YELLOW}[KEEP]${NC} Keeping $HOME/.openclaw-android"
+    fi
+fi
+
+# 9. Optionally remove openclaw data
 if [ -d "$HOME/.openclaw" ]; then
-    read -rp "Remove OpenClaw data directory ($HOME/.openclaw)? [y/N] " REPLY
+    read -rp "Remove OpenClaw data directory (~/.openclaw)? Includes workspace and settings. [y/N] " REPLY
     if [[ "$REPLY" =~ ^[Yy]$ ]]; then
         rm -rf "$HOME/.openclaw"
         echo -e "${GREEN}[OK]${NC}   Removed $HOME/.openclaw"
     else
         echo -e "${YELLOW}[KEEP]${NC} Keeping $HOME/.openclaw"
+    fi
+fi
+
+# 10. Optionally remove AI CLI tools
+AI_TOOLS_FOUND=()
+AI_TOOL_LABELS=()
+if command -v claude &>/dev/null; then
+    AI_TOOLS_FOUND+=("@anthropic-ai/claude-code")
+    AI_TOOL_LABELS+=("Claude Code")
+fi
+if command -v gemini &>/dev/null; then
+    AI_TOOLS_FOUND+=("@google/gemini-cli")
+    AI_TOOL_LABELS+=("Gemini CLI")
+fi
+if command -v codex &>/dev/null; then
+    AI_TOOLS_FOUND+=("@openai/codex")
+    AI_TOOL_LABELS+=("Codex CLI")
+fi
+
+if [ ${#AI_TOOLS_FOUND[@]} -gt 0 ]; then
+    echo ""
+    echo "Installed AI CLI tools detected:"
+    for label in "${AI_TOOL_LABELS[@]}"; do
+        echo "  - $label"
+    done
+    read -rp "Remove these AI CLI tools? [y/N] " REPLY
+    if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+        for pkg in "${AI_TOOLS_FOUND[@]}"; do
+            if npm uninstall -g "$pkg" 2>/dev/null; then
+                echo -e "${GREEN}[OK]${NC}   Removed $pkg"
+            else
+                echo -e "${YELLOW}[WARN]${NC} Failed to remove $pkg"
+            fi
+        done
+    else
+        echo -e "${YELLOW}[KEEP]${NC} Keeping AI CLI tools"
     fi
 fi
 

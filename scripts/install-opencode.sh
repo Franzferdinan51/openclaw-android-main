@@ -12,6 +12,13 @@
 #      → concatenating ld.so + binary data fixes the offset math
 set -euo pipefail
 
+# Parse flags
+INSTALL_OMO=true
+for arg in "$@"; do
+    case "$arg" in
+        --no-omo) INSTALL_OMO=false ;;
+    esac
+done
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
@@ -63,10 +70,11 @@ create_ldso_concat() {
         return 1
     fi
 
-    echo "  Creating ld.so concatenation for $name..."
-    cp "$GLIBC_LDSO" "$output_path"
-    cat "$bin_path" >> "$output_path"
-    chmod +x "$output_path"
+echo "  Creating ld.so concatenation for $name..."
+echo "    (Copying large binary files — this may take a minute)"
+cp "$GLIBC_LDSO" "$output_path"
+cat "$bin_path" >> "$output_path"
+chmod +x "$output_path"
 
     # Verify the Bun magic marker exists at the end
     local marker
@@ -115,7 +123,7 @@ echo -e "${GREEN}[OK]${NC}   proot rootfs created at $PROOT_ROOT"
 
 echo ""
 echo "Installing Bun..."
-
+echo "  (Downloading and installing Bun runtime — this may take a few minutes)"
 BUN_BIN="$HOME/.bun/bin/bun"
 if [ -x "$BUN_BIN" ]; then
     echo -e "${GREEN}[OK]${NC}   Bun already installed"
@@ -151,7 +159,7 @@ echo -e "${GREEN}[OK]${NC}   Bun $BUN_VER verified"
 
 echo ""
 echo "Installing OpenCode..."
-
+echo "  (Downloading package — this may take a few minutes)"
 # Use bun to install opencode-ai package
 # Note: bun may exit non-zero due to optional platform packages (windows, darwin)
 # failing to install, but the linux-arm64 binary is still installed successfully.
@@ -199,9 +207,11 @@ fi
 
 # ── Step 4: Install oh-my-opencode ───────────
 
+if [ "$INSTALL_OMO" = true ]; then
+
 echo ""
 echo "Installing oh-my-opencode..."
-
+echo "  (Downloading package — this may take a few minutes)"
 # Note: same as opencode-ai, bun may exit non-zero due to optional platform packages.
 "$BUN_WRAPPER" install -g oh-my-opencode 2>&1 || true
 echo -e "${GREEN}[OK]${NC}   oh-my-opencode package install attempted"
@@ -222,7 +232,7 @@ if [ -z "$OMO_BIN" ]; then
     echo -e "${YELLOW}[WARN]${NC} oh-my-opencode binary not found"
     rm -f "$BUN_WRAPPER"
     echo ""
-    echo -e "${GREEN}OpenCode installation complete (without oh-my-opencode CLI).${NC}"
+    echo -e "${GREEN}OpenCode installation complete (without oh-my-opencode).${NC}"
     exit 0
 fi
 echo -e "${GREEN}[OK]${NC}   oh-my-opencode binary found: $OMO_BIN"
@@ -239,12 +249,14 @@ create_ldso_concat "$OMO_BIN" "$LDSO_OMO" "oh-my-opencode" || {
 create_proot_wrapper "$PREFIX/bin/oh-my-opencode" "$LDSO_OMO" "$OMO_BIN" "oh-my-opencode"
 
 # Verify
-OMO_VER=$("$PREFIX/bin/oh-my-opencode" version 2>/dev/null || "$PREFIX/bin/oh-my-opencode" --version 2>/dev/null || true)
+OMO_VER=$($PREFIX/bin/oh-my-opencode version 2>/dev/null || $PREFIX/bin/oh-my-opencode --version 2>/dev/null || true)
 if [ -n "$OMO_VER" ]; then
     echo -e "${GREEN}[OK]${NC}   oh-my-opencode $OMO_VER verified"
 else
     echo -e "${YELLOW}[WARN]${NC} oh-my-opencode version check failed (may work in interactive mode)"
 fi
+
+fi  # INSTALL_OMO
 
 # ── Step 5: Create OpenCode config ───────────
 
@@ -256,13 +268,22 @@ OPENCODE_CONFIG="$OPENCODE_CONFIG_DIR/opencode.json"
 mkdir -p "$OPENCODE_CONFIG_DIR"
 
 if [ ! -f "$OPENCODE_CONFIG" ]; then
-    cat > "$OPENCODE_CONFIG" << 'CONFIG'
+    if [ "$INSTALL_OMO" = true ]; then
+        cat > "$OPENCODE_CONFIG" << 'CONFIG'
 {
   "$schema": "https://opencode.ai/config.json",
   "plugin": ["oh-my-opencode"]
 }
 CONFIG
-    echo -e "${GREEN}[OK]${NC}   OpenCode config created with oh-my-opencode plugin"
+        echo -e "${GREEN}[OK]${NC}   OpenCode config created with oh-my-opencode plugin"
+    else
+        cat > "$OPENCODE_CONFIG" << 'CONFIG'
+{
+  "$schema": "https://opencode.ai/config.json"
+}
+CONFIG
+        echo -e "${GREEN}[OK]${NC}   OpenCode config created"
+    fi
 else
     echo -e "${GREEN}[OK]${NC}   OpenCode config already exists"
 fi
@@ -272,7 +293,11 @@ fi
 rm -f "$BUN_WRAPPER"
 
 echo ""
-echo -e "${GREEN}OpenCode + oh-my-opencode installation complete.${NC}"
+if [ "$INSTALL_OMO" = true ] && [ -n "${OMO_VER:-}" ]; then
+    echo -e "${GREEN}OpenCode + oh-my-opencode installation complete.${NC}"
+else
+    echo -e "${GREEN}OpenCode installation complete.${NC}"
+fi
 if [ -n "${OC_VER:-}" ]; then
     echo "  OpenCode:         v$OC_VER"
 fi

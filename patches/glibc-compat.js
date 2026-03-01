@@ -13,7 +13,7 @@
  * - os.networkInterfaces() safety: EACCES on some Android configurations
  * - /bin/sh path shim: Android 7-8 lacks /bin/sh (Android 9+ has it)
  *
- * Loaded via NODE_OPTIONS="-r <path>/glibc-compat.js" (only if needed)
+ * Loaded via node wrapper script: node --require <path>/glibc-compat.js
  */
 
 'use strict';

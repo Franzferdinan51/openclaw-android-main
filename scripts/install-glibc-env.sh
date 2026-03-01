@@ -131,7 +131,7 @@ fi
 
 echo ""
 echo "Downloading Node.js v${NODE_VERSION} (linux-arm64)..."
-
+echo "  (File size ~25MB — may take a few minutes depending on network speed)"
 mkdir -p "$NODE_DIR"
 
 TMP_DIR=$(mktemp -d "$PREFIX/tmp/node-install.XXXXXX") || {
@@ -147,7 +147,7 @@ fi
 echo -e "${GREEN}[OK]${NC}   Downloaded $NODE_TARBALL"
 
 # Extract
-echo "Extracting..."
+echo "Extracting Node.js... (this may take a moment)"
 if ! tar -xJf "$TMP_DIR/$NODE_TARBALL" -C "$NODE_DIR" --strip-components=1; then
     echo -e "${RED}[FAIL]${NC} Failed to extract Node.js"
     exit 1

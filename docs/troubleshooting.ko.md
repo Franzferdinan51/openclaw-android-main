@@ -122,6 +122,8 @@ source ~/.bashrc
 Error: Cannot find module '/data/data/com.termux/files/home/.openclaw-lite/patches/glibc-compat.js'
 ```
 
+> **참고**: 이 문제는 v1.0.0 이전(Bionic) 설치에서만 발생합니다. v1.0.0+(glibc)에서는 `glibc-compat.js`가 node 래퍼 스크립트에 의해 로딩되므로 `NODE_OPTIONS`를 사용하지 않습니다.
+
 ### 원인
 
 `~/.bashrc`의 `NODE_OPTIONS` 환경변수가 이전 설치 경로(`.openclaw-lite`)를 참조하고 있습니다. 프로젝트명이 "OpenClaw Lite"였던 이전 버전에서 업데이트한 경우 발생합니다.
@@ -174,7 +176,9 @@ Reason: global update
 
 ### 원인
 
-`openclaw update`가 npm으로 패키지를 업데이트할 때, npm을 서브프로세스로 실행합니다. `sharp` 네이티브 모듈 컴파일에 필요한 Termux 전용 빌드 환경변수(`CXXFLAGS`, `GYP_DEFINES`, `CPATH`)가 `~/.bashrc`에 설정되어 있지만, 해당 서브프로세스 환경에서는 자동으로 적용되지 않아 빌드가 실패합니다.
+**v1.0.0+(glibc)**: `sharp` 모듈은 프리빌트 바이너리(`@img/sharp-linux-arm64`)를 사용하며 glibc 환경에서 네이티브로 로딩됩니다. 이 에러는 드문 — 주로 프리빌트 바이너리가 누락되거나 손상된 경우입니다.
+
+**v1.0.0 이전(Bionic)**: `openclaw update`가 npm을 서브프로세스로 실행할 때, Termux 전용 빌드 환경변수(`CXXFLAGS`, `GYP_DEFINES`)가 서브프로세스 환경에서 사용 불가하여 네이티브 모듈 컴파일이 실패합니다.
 
 ### 영향
 
@@ -188,7 +192,7 @@ Reason: global update
 bash ~/.openclaw-android/scripts/build-sharp.sh
 ```
 
-또는 `openclaw update` 대신 `oa --update`를 사용하면, 필요한 환경변수를 자동으로 설정하고 sharp 빌드까지 처리합니다:
+또는 `openclaw update` 대신 `oa --update`를 사용하면 sharp를 자동으로 처리합니다:
 
 ```bash
 oa --update && source ~/.bashrc
@@ -224,32 +228,77 @@ cd $(npm root -g)/clawdhub && npm install undici
 Gateway status failed: Error: Gateway service install not supported on android
 ```
 
+> **참고**: 이 문제는 v1.0.0 이전(Bionic) 설치에서만 발생합니다. v1.0.0+(glibc)에서는 Node.js가 `process.platform`을 `'linux'`으로 보고하므로 이 에러가 발생하지 않습니다.
+
 ### 원인
 
-`glibc-compat.js`의 `process.platform` 오버라이드가 적용되지 않은 상태입니다.
+**v1.0.0 이전(Bionic)**: `glibc-compat.js`의 `process.platform` 오버라이드가 적용되지 않은 상태입니다. `NODE_OPTIONS`가 설정되지 않았기 때문입니다.
 
 ### 해결 방법
 
-`NODE_OPTIONS` 환경변수가 설정되어 있는지 확인:
-
-```bash
-echo $NODE_OPTIONS
-```
-
-비어있으면 환경변수를 로드하세요:
-
-```bash
-source ~/.bashrc
-```
-
-`NODE_OPTIONS`가 설정되어 있는데도 에러가 나면, `glibc-compat.js` 파일이 최신인지 확인:
+어떤 Node.js가 사용되고 있는지 확인:
 
 ```bash
 node -e "console.log(process.platform)"
 ```
 
-`android`가 출력되면 파일이 오래된 버전입니다. 재설치하세요:
+`android`가 출력되면 glibc node 래퍼가 사용되지 않고 있는 것입니다. 환경변수를 로드하세요:
 
 ```bash
-curl -sL myopenclawhub.com/install | bash
+source ~/.bashrc
+```
+
+여전히 `android`가 출력되면, 최신 버전으로 업데이트하세요 (v1.0.0+는 glibc를 사용하여 이 문제를 영구적으로 해결합니다):
+
+```bash
+oa --update && source ~/.bashrc
+```
+
+## `openclaw update` 시 node-llama-cpp 빌드 에러
+
+```
+[node-llama-cpp] Cloning ggml-org/llama.cpp (local bundle)
+npm error 48%
+Update Result: ERROR
+```
+
+### 원인
+
+OpenClaw이 npm으로 업데이트할 때, `node-llama-cpp`의 postinstall 스크립트가 `llama.cpp` 소스를 clone하고 컴파일을 시도합니다. Termux의 빌드 툴체인(`cmake`, `clang`)이 Bionic으로 링크되어 있고 Node.js는 glibc로 실행되므로 — 두 환경이 네이티브 컴파일에 호환되지 않아 실패합니다.
+
+### 영향
+
+**이 에러는 무해합니다.** 프리빌트 `node-llama-cpp` 바이너리(`@node-llama-cpp/linux-arm64`)가 이미 설치되어 있으며 glibc 환경에서 정상 작동합니다. 실패한 소스 빌드가 프리빌트 바이너리를 덮어쓰지 않습니다.
+
+node-llama-cpp는 선택적 로컬 임베딩에 사용됩니다. 프리빌트 바이너리가 로딩되지 않으면 OpenClaw이 원격 임베딩 프로바이더(OpenAI, Gemini 등)로 자동 fallback합니다.
+
+### 해결 방법
+
+조치가 필요 없습니다. 이 에러는 안전하게 무시할 수 있습니다. 프리빌트 바이너리가 정상 작동하는지 확인하려면:
+
+```bash
+node -e "require('$(npm root -g)/openclaw/node_modules/@node-llama-cpp/linux-arm64/bins/linux-arm64/llama-addon.node'); console.log('OK')"
+```
+
+## OpenCode 설치 시 EACCES 권한 에러
+
+```
+EACCES: Permission denied while installing opencode-ai
+Failed to install 118 packages
+```
+
+### 원인
+
+Bun이 패키지 설치 시 하드링크와 심링크를 생성하려고 시도합니다. Android 파일시스템이 이러한 작업을 제한하여 의존성 패키지에서 `EACCES` 에러가 발생합니다.
+
+### 영향
+
+**이 에러는 무해합니다.** 메인 바이너리(`opencode`, `oh-my-opencode`)는 의존성 링크 실패에도 불구하고 정상적으로 설치됩니다. ld.so 결합과 proot 래퍼가 실행을 처리합니다.
+
+### 해결 방법
+
+조치가 필요 없습니다. OpenCode가 정상 작동하는지 확인:
+
+```bash
+opencode --version
 ```
