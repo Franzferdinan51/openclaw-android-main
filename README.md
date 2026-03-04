@@ -76,7 +76,7 @@ The installer automatically resolves the differences between Termux and standard
 3. **Path conversion** — Automatically converts standard Linux paths (`/tmp`, `/bin/sh`, `/usr/bin/env`) to Termux paths
 4. **Temp folder setup** — Configures an accessible temp folder for Android
 5. **Service manager bypass** — Configures normal operation without systemd
-6. **OpenCode integration** — If selected, installs OpenCode + oh-my-opencode using proot + ld.so concatenation for Bun standalone binaries
+6. **OpenCode integration** — If selected, installs OpenCode using proot + ld.so concatenation for Bun standalone binaries
 
 ## Step-by-Step Setup (from a fresh phone)
 
@@ -196,7 +196,7 @@ This single command updates all installed components at once:
 
 - **OpenClaw** — Core package (`openclaw@latest`)
 - **code-server** — Browser IDE
-- **OpenCode + oh-my-opencode** — AI coding assistant
+- **OpenCode** — AI coding assistant
 - **AI CLI tools** — Claude Code, Gemini CLI, Codex CLI
 - **Android patches** — Compatibility patches from this project
 
@@ -284,7 +284,6 @@ Each tool is offered via an individual Y/n prompt. You choose which ones to inst
 | [android-tools](https://developer.android.com/tools/adb) | ADB for disabling Phantom Process Killer | `pkg install` |
 | [code-server](https://github.com/coder/code-server) | Browser-based VS Code IDE | Direct download from GitHub |
 | [OpenCode](https://opencode.ai/) | AI coding assistant (TUI). Auto-installs [Bun](https://bun.sh/) and [proot](https://proot-me.github.io/) as dependencies | `bun install -g` |
-| [oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode) | Plugin framework for OpenCode | `bun install -g` |
 | [Claude Code](https://github.com/anthropics/claude-code) (Anthropic) | AI CLI tool | `npm install -g` |
 | [Gemini CLI](https://github.com/google-gemini/gemini-cli) (Google) | AI CLI tool | `npm install -g` |
 | [Codex CLI](https://github.com/openai/codex) (OpenAI) | AI CLI tool | `npm install -g` |
@@ -316,7 +315,7 @@ openclaw-android/
 │   ├── install-build-tools.sh  # Build tools for native modules (L2 conditional)
 │   ├── build-sharp.sh          # Build sharp native module (image processing)
 │   ├── install-code-server.sh  # Install/update code-server (browser IDE)
-│   ├── install-opencode.sh     # Install OpenCode + oh-my-opencode
+│   ├── install-opencode.sh     # Install OpenCode
 │   ├── setup-env.sh            # Configure environment variables
 │   └── setup-paths.sh          # Create directories and symlinks
 ├── platforms/
@@ -413,10 +412,10 @@ Loads the platform's `config.env` via `load_platform_config()` from `scripts/lib
 
 ### [3/8] Optional Tools Selection (L3)
 
-Presents 10 individual Y/n prompts (via `/dev/tty`) for optional tools:
+Presents 9 individual Y/n prompts (via `/dev/tty`) for optional tools:
 
 - tmux, ttyd, dufs, android-tools
-- code-server, OpenCode, oh-my-opencode (only if OpenCode selected)
+- code-server, OpenCode
 - Claude Code, Gemini CLI, Codex CLI
 
 All selections are collected upfront before any installation begins. This allows the user to make all decisions at once and walk away during the install.
@@ -473,7 +472,7 @@ Installs the tools selected in Step 3:
 
 - **Termux packages**: tmux, ttyd, dufs, android-tools — installed via `pkg install`
 - **code-server**: Browser-based VS Code IDE with Termux-specific workarounds (replace bundled node, patch argon2, handle hard link failures)
-- **OpenCode + oh-my-opencode**: AI coding assistant using proot + ld.so concatenation for Bun standalone binaries
+- **OpenCode**: AI coding assistant using proot + ld.so concatenation for Bun standalone binaries
 - **AI CLI tools**: Claude Code, Gemini CLI, Codex CLI — installed via `npm install -g`
 
 ### [8/8] Verification — `tests/verify-install.sh`
@@ -567,7 +566,7 @@ Delegates to `platforms/<platform>/update.sh`. For OpenClaw, this:
 Updates tools that are already installed:
 
 - **code-server**: Runs `install-code-server.sh` in update mode. Skipped if not installed
-- **OpenCode + oh-my-opencode**: Updates if installed; offers to install if not. Requires glibc architecture
+- **OpenCode**: Updates if installed; offers to install if not. Requires glibc architecture
 - **AI CLI tools** (Claude Code, Gemini CLI, Codex CLI): Compares installed vs latest npm version, updates if needed. Tools not installed are not offered for installation
 
 </details>

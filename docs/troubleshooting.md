@@ -293,7 +293,7 @@ Bun attempts to create hardlinks and symlinks when installing packages. Android'
 
 ### Impact
 
-**These errors are harmless.** The main binaries (`opencode`, `oh-my-opencode`) are installed correctly despite the dependency link failures. The ld.so concatenation and proot wrapper handle execution.
+**These errors are harmless.** The main binary (`opencode`) is installed correctly despite the dependency link failures. The ld.so concatenation and proot wrapper handle execution.
 
 ### Solution
 

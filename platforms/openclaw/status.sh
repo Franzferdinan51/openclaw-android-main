@@ -53,12 +53,6 @@ else
     echo -e "  OpenCode:    ${YELLOW}not installed${NC}"
 fi
 
-if command -v oh-my-opencode &>/dev/null; then
-    omo_ver=$(oh-my-opencode version 2>/dev/null || oh-my-opencode --version 2>/dev/null || echo "installed")
-    echo "  omo:         $omo_ver"
-else
-    echo -e "  omo:         ${YELLOW}not installed${NC}"
-fi
 
 echo ""
 echo -e "${BOLD}Architecture${NC}"
@@ -102,11 +96,6 @@ else
     echo -e "  ${YELLOW}[MISS]${NC} opencode command"
 fi
 
-if [ -f "${PREFIX:-}/bin/oh-my-opencode" ]; then
-    echo -e "  ${GREEN}[OK]${NC}   oh-my-opencode command"
-else
-    echo -e "  ${YELLOW}[MISS]${NC} oh-my-opencode command"
-fi
 
 echo ""
 echo -e "${BOLD}AI CLI Tools${NC}"

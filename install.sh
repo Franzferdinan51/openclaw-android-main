@@ -37,7 +37,6 @@ INSTALL_DUFS=false
 INSTALL_ANDROID_TOOLS=false
 INSTALL_CODE_SERVER=false
 INSTALL_OPENCODE=false
-INSTALL_OMO=false
 INSTALL_CLAUDE_CODE=false
 INSTALL_GEMINI_CLI=false
 INSTALL_CODEX_CLI=false
@@ -48,9 +47,6 @@ if ask_yn "Install dufs (file server)?"; then INSTALL_DUFS=true; fi
 if ask_yn "Install android-tools (adb)?"; then INSTALL_ANDROID_TOOLS=true; fi
 if ask_yn "Install code-server (browser IDE)?"; then INSTALL_CODE_SERVER=true; fi
 if ask_yn "Install OpenCode (AI coding assistant)?"; then INSTALL_OPENCODE=true; fi
-if [ "$INSTALL_OPENCODE" = true ]; then
-    if ask_yn "Install oh-my-opencode (OpenCode plugin framework)?"; then INSTALL_OMO=true; fi
-fi
 if ask_yn "Install Claude Code CLI?"; then INSTALL_CLAUDE_CODE=true; fi
 if ask_yn "Install Gemini CLI?"; then INSTALL_GEMINI_CLI=true; fi
 if ask_yn "Install Codex CLI?"; then INSTALL_CODEX_CLI=true; fi
@@ -113,7 +109,6 @@ step 7 "Install Optional Tools (L3)"
 [ "$INSTALL_CODE_SERVER" = true ] && mkdir -p "$PROJECT_DIR/patches" && cp "$SCRIPT_DIR/patches/argon2-stub.js" "$PROJECT_DIR/patches/argon2-stub.js" && bash "$SCRIPT_DIR/scripts/install-code-server.sh" install || true
 
 [ "$INSTALL_OPENCODE" = true ] && bash "$SCRIPT_DIR/scripts/install-opencode.sh" install || true
-[ "$INSTALL_OMO" = true ] && bash "$SCRIPT_DIR/scripts/install-opencode.sh" install-omo || true
 
 [ "$INSTALL_CLAUDE_CODE" = true ] && npm install -g @anthropic-ai/claude-code || true
 [ "$INSTALL_GEMINI_CLI" = true ] && npm install -g @google/gemini-cli || true

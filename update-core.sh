@@ -212,32 +212,20 @@ if [ "$IS_GLIBC" = false ]; then
     echo -e "${YELLOW}[SKIP]${NC} OpenCode requires glibc architecture"
 else
     OPENCODE_INSTALLED=false
-    OMO_INSTALLED=false
     command -v opencode &>/dev/null && OPENCODE_INSTALLED=true
-    command -v oh-my-opencode &>/dev/null && OMO_INSTALLED=true
 
     if [ "$OPENCODE_INSTALLED" = true ]; then
         CURRENT_OC_VER=$(opencode --version 2>/dev/null || echo "")
         LATEST_OC_VER=$(npm view opencode-ai version 2>/dev/null || echo "")
 
-        OPENCODE_FLAGS=""
-        NEEDS_OMO_INSTALL=false
-        if [ "$OMO_INSTALLED" = false ]; then
-            if ask_yn "oh-my-opencode is not installed. Install it?"; then
-                NEEDS_OMO_INSTALL=true
-            else
-                OPENCODE_FLAGS="--no-omo"
-            fi
-        fi
-
-        if [ -n "$CURRENT_OC_VER" ] && [ -n "$LATEST_OC_VER" ] && [ "$CURRENT_OC_VER" = "$LATEST_OC_VER" ] && [ "$NEEDS_OMO_INSTALL" = false ]; then
+        if [ -n "$CURRENT_OC_VER" ] && [ -n "$LATEST_OC_VER" ] && [ "$CURRENT_OC_VER" = "$LATEST_OC_VER" ]; then
             echo -e "${GREEN}[OK]${NC}   OpenCode $CURRENT_OC_VER is already the latest"
         else
             if [ -n "$CURRENT_OC_VER" ] && [ -n "$LATEST_OC_VER" ] && [ "$CURRENT_OC_VER" != "$LATEST_OC_VER" ]; then
                 echo "OpenCode update available: $CURRENT_OC_VER -> $LATEST_OC_VER"
             fi
             echo "  (This may take a few minutes for package download and binary processing)"
-            if bash "$RELEASE_TMP/scripts/install-opencode.sh" $OPENCODE_FLAGS; then
+            if bash "$RELEASE_TMP/scripts/install-opencode.sh"; then
                 echo -e "${GREEN}[OK]${NC}   OpenCode ${LATEST_OC_VER:-} updated"
             else
                 echo -e "${YELLOW}[WARN]${NC} OpenCode update failed (non-critical)"
@@ -245,11 +233,7 @@ else
         fi
     else
         if ask_yn "Install OpenCode?"; then
-            OPENCODE_FLAGS="--no-omo"
-            if ask_yn "Install oh-my-opencode?"; then
-                OPENCODE_FLAGS=""
-            fi
-            if bash "$RELEASE_TMP/scripts/install-opencode.sh" $OPENCODE_FLAGS; then
+            if bash "$RELEASE_TMP/scripts/install-opencode.sh"; then
                 echo -e "${GREEN}[OK]${NC}   OpenCode installed"
             else
                 echo -e "${YELLOW}[WARN]${NC} OpenCode installation failed (non-critical)"

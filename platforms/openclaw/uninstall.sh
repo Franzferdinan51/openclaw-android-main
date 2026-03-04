@@ -37,16 +37,8 @@ else
     echo -e "${YELLOW}[SKIP]${NC} npm not found"
 fi
 
-step 3 "OpenCode and oh-my-opencode"
+step 3 "OpenCode"
 OPENCODE_INSTALLED=false
-OMO_INSTALLED=false
-
-if command -v opencode &>/dev/null || [ -f "$PREFIX/bin/opencode" ] || [ -f "$PREFIX/tmp/ld.so.opencode" ]; then
-    OPENCODE_INSTALLED=true
-fi
-if command -v oh-my-opencode &>/dev/null || [ -f "$PREFIX/bin/oh-my-opencode" ] || [ -f "$PREFIX/tmp/ld.so.omo" ]; then
-    OMO_INSTALLED=true
-fi
 
 if [ "$OPENCODE_INSTALLED" = true ]; then
     if ask_yn "Remove OpenCode (AI coding assistant)?"; then
@@ -62,17 +54,8 @@ if [ "$OPENCODE_INSTALLED" = true ]; then
     fi
 fi
 
-if [ "$OMO_INSTALLED" = true ]; then
-    if ask_yn "Remove oh-my-opencode (OpenCode plugin framework)?"; then
-        [ -f "$PREFIX/tmp/ld.so.omo" ] && rm -f "$PREFIX/tmp/ld.so.omo" && echo -e "${GREEN}[OK]${NC}   Removed ld.so.omo"
-        [ -f "$PREFIX/bin/oh-my-opencode" ] && rm -f "$PREFIX/bin/oh-my-opencode" && echo -e "${GREEN}[OK]${NC}   Removed oh-my-opencode wrapper"
-    else
-        echo -e "${YELLOW}[KEEP]${NC} Keeping oh-my-opencode"
-    fi
-fi
-
 step 4 "Bun cleanup"
-if [ ! -f "$PREFIX/bin/opencode" ] && [ ! -f "$PREFIX/bin/oh-my-opencode" ] && [ -d "$HOME/.bun" ]; then
+if [ ! -f "$PREFIX/bin/opencode" ] && [ -d "$HOME/.bun" ]; then
     rm -rf "$HOME/.bun"
     echo -e "${GREEN}[OK]${NC}   Removed ~/.bun"
 else
