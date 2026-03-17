@@ -51,7 +51,8 @@ if [ -x "$NODE_DIR/bin/node" ]; then
             # Repair npm/npx wrappers — older installs may have shebang-only patch
             # which fails because bin/npm's relative require('../lib/cli.js') doesn't resolve
             _any_fixed=false
-            if [ -f "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" ] && ! grep -q 'npm-cli.js' "$NODE_DIR/bin/npm" 2>/dev/null; then
+            if [ -f "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" ]; then
+                rm -f "$NODE_DIR/bin/npm"
                 cat > "$NODE_DIR/bin/npm" << NPMWRAP
 #!$PREFIX/bin/bash
 exec "$NODE_DIR/bin/node" "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" "\$@"
@@ -59,7 +60,8 @@ NPMWRAP
                 chmod +x "$NODE_DIR/bin/npm"
                 _any_fixed=true
             fi
-            if [ -f "$NODE_DIR/lib/node_modules/npm/bin/npx-cli.js" ] && ! grep -q 'npx-cli.js' "$NODE_DIR/bin/npx" 2>/dev/null; then
+            if [ -f "$NODE_DIR/lib/node_modules/npm/bin/npx-cli.js" ]; then
+                rm -f "$NODE_DIR/bin/npx"
                 cat > "$NODE_DIR/bin/npx" << NPXWRAP
 #!$PREFIX/bin/bash
 exec "$NODE_DIR/bin/node" "$NODE_DIR/lib/node_modules/npm/bin/npx-cli.js" "\$@"
@@ -169,6 +171,7 @@ echo -e "${GREEN}[OK]${NC}   node wrapper created"
 # Replace them with explicit shell wrappers that invoke the correct entry points.
 echo "Creating npm/npx wrapper scripts..."
 if [ -f "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" ]; then
+    rm -f "$NODE_DIR/bin/npm"
     cat > "$NODE_DIR/bin/npm" << NPMWRAP
 #!$PREFIX/bin/bash
 exec "$NODE_DIR/bin/node" "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" "\$@"
@@ -177,6 +180,7 @@ NPMWRAP
     echo -e "${GREEN}[OK]${NC}   npm wrapper created"
 fi
 if [ -f "$NODE_DIR/lib/node_modules/npm/bin/npx-cli.js" ]; then
+    rm -f "$NODE_DIR/bin/npx"
     cat > "$NODE_DIR/bin/npx" << NPXWRAP
 #!$PREFIX/bin/bash
 exec "$NODE_DIR/bin/node" "$NODE_DIR/lib/node_modules/npm/bin/npx-cli.js" "\$@"

@@ -212,14 +212,16 @@ if [ -f "$NODE_DIR/bin/node.real" ] && "$NODE_DIR/bin/node" --version &>/dev/nul
     echo -e "  ${GREEN}[SKIP]${NC} Node.js already installed ($INSTALLED_VER)"
     # Repair npm/npx wrappers — older installs may have shebang-only patch
     # which fails because bin/npm's relative require('../lib/cli.js') doesn't resolve
-    if [ -f "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" ] && ! grep -q 'npm-cli.js' "$NODE_DIR/bin/npm" 2>/dev/null; then
+    if [ -f "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" ]; then
+        rm -f "$NODE_DIR/bin/npm"
         cat > "$NODE_DIR/bin/npm" << NPMWRAP
 #!$PREFIX/bin/bash
 exec "$NODE_DIR/bin/node" "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" "\$@"
 NPMWRAP
         chmod +x "$NODE_DIR/bin/npm"
     fi
-    if [ -f "$NODE_DIR/lib/node_modules/npm/bin/npx-cli.js" ] && ! grep -q 'npx-cli.js' "$NODE_DIR/bin/npx" 2>/dev/null; then
+    if [ -f "$NODE_DIR/lib/node_modules/npm/bin/npx-cli.js" ]; then
+        rm -f "$NODE_DIR/bin/npx"
         cat > "$NODE_DIR/bin/npx" << NPXWRAP
 #!$PREFIX/bin/bash
 exec "$NODE_DIR/bin/node" "$NODE_DIR/lib/node_modules/npm/bin/npx-cli.js" "\$@"
@@ -282,6 +284,7 @@ WRAPPER
     # bin/npm and bin/npx from the Node.js tarball use relative requires
     # (e.g. require('../lib/cli.js')) that don't resolve in Termux's install path.
     if [ -f "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" ]; then
+        rm -f "$NODE_DIR/bin/npm"
         cat > "$NODE_DIR/bin/npm" << NPMWRAP
 #!$PREFIX/bin/bash
 exec "$NODE_DIR/bin/node" "$NODE_DIR/lib/node_modules/npm/bin/npm-cli.js" "\$@"
@@ -289,6 +292,7 @@ NPMWRAP
         chmod +x "$NODE_DIR/bin/npm"
     fi
     if [ -f "$NODE_DIR/lib/node_modules/npm/bin/npx-cli.js" ]; then
+        rm -f "$NODE_DIR/bin/npx"
         cat > "$NODE_DIR/bin/npx" << NPXWRAP
 #!$PREFIX/bin/bash
 exec "$NODE_DIR/bin/node" "$NODE_DIR/lib/node_modules/npm/bin/npx-cli.js" "\$@"
