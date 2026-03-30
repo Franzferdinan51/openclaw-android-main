@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, Fragment } from 'react'
 import { bridge } from '../lib/bridge'
 import { useNativeEvent } from '../lib/useNativeEvent'
+import { t } from '../i18n'
 
 interface Props {
   onComplete: () => void
@@ -15,22 +16,26 @@ interface Platform {
   desc: string
 }
 
-const OPTIONAL_TOOLS = [
-  { id: 'tmux', name: 'tmux', desc: 'Terminal multiplexer for background sessions' },
-  { id: 'ttyd', name: 'ttyd', desc: 'Web terminal — access from a browser' },
-  { id: 'dufs', name: 'dufs', desc: 'File server (WebDAV)' },
-  { id: 'code-server', name: 'code-server', desc: 'VS Code in browser' },
-  { id: 'claude-code', name: 'Claude Code', desc: 'Anthropic AI CLI' },
-  { id: 'gemini-cli', name: 'Gemini CLI', desc: 'Google AI CLI' },
-  { id: 'codex-cli', name: 'Codex CLI', desc: 'OpenAI AI CLI' },
-]
+function getOptionalTools() {
+  return [
+    { id: 'tmux', name: 'tmux', desc: t('tool_tmux') },
+    { id: 'ttyd', name: 'ttyd', desc: t('tool_ttyd') },
+    { id: 'dufs', name: 'dufs', desc: t('tool_dufs') },
+    { id: 'code-server', name: 'code-server', desc: t('tool_code_server') },
+    { id: 'claude-code', name: 'Claude Code', desc: t('tool_claude_code') },
+    { id: 'gemini-cli', name: 'Gemini CLI', desc: t('tool_gemini_cli') },
+    { id: 'codex-cli', name: 'Codex CLI', desc: t('tool_codex_cli') },
+  ]
+}
 
-const TIPS = [
-  'You can install multiple AI platforms and switch between them anytime.',
-  'Setup is a one-time process. Future launches are instant.',
-  'Once setup is complete, your AI assistant runs at full speed — just like on a computer.',
-  'All processing happens locally on your device. Your data never leaves your phone.',
-]
+function getTips() {
+  return [
+    t('tip_1'),
+    t('tip_2'),
+    t('tip_3'),
+    t('tip_4'),
+  ]
+}
 
 export function Setup({ onComplete }: Props) {
   const [phase, setPhase] = useState<SetupPhase>('platform-select')
@@ -61,7 +66,7 @@ export function Setup({ onComplete }: Props) {
     if (d.progress !== undefined && d.progress >= 1) {
       setPhase('done')
     }
-    setTipIndex(i => (i + 1) % TIPS.length)
+    setTipIndex(i => (i + 1) % getTips().length)
   }, [])
 
   useNativeEvent('setup_progress', onProgress)
@@ -83,15 +88,15 @@ export function Setup({ onComplete }: Props) {
   function handleStartSetup() {
     // Save tool selections
     const selections: Record<string, boolean> = {}
-    OPTIONAL_TOOLS.forEach(t => {
-      selections[t.id] = selectedTools.has(t.id)
+    getOptionalTools().forEach(tool => {
+      selections[tool.id] = selectedTools.has(tool.id)
     })
     bridge.call('saveToolSelections', JSON.stringify(selections))
 
     // Start bootstrap setup
     setPhase('installing')
     setProgress(0)
-    setMessage('Preparing setup...')
+    setMessage(t('setup_preparing'))
     setError('')
     bridge.call('startSetup')
   }
@@ -101,7 +106,7 @@ export function Setup({ onComplete }: Props) {
     : phase === 'tool-select' ? 1
     : phase === 'installing' ? 2 : 3
 
-  const STEPS = ['Platform', 'Tools', 'Setup']
+  const STEPS = [t('step_platform'), t('step_tools'), t('step_setup')]
 
   function renderStepper() {
     return (
@@ -124,7 +129,7 @@ export function Setup({ onComplete }: Props) {
     return (
       <div className="setup-container">
         {renderStepper()}
-        <div className="setup-title">Choose your platform</div>
+        <div className="setup-title">{t('setup_choose_platform')}</div>
 
         {platforms.map(p => (
           <div
@@ -145,7 +150,7 @@ export function Setup({ onComplete }: Props) {
           </div>
         ))}
 
-        <div className="setup-subtitle">More platforms available in Settings.</div>
+        <div className="setup-subtitle">{t('setup_more_platforms')}</div>
       </div>
     )
   }
@@ -156,13 +161,13 @@ export function Setup({ onComplete }: Props) {
       <div className="setup-container" style={{ justifyContent: 'flex-start', paddingTop: 48 }}>
         {renderStepper()}
 
-        <div className="setup-title" style={{ fontSize: 22 }}>Optional Tools</div>
+        <div className="setup-title" style={{ fontSize: 22 }}>{t('setup_optional_tools')}</div>
         <div className="setup-subtitle">
-          Select tools to install alongside {selectedPlatform}. You can always add more later in Settings.
+          {t('setup_tools_desc', { platform: selectedPlatform })}
         </div>
 
         <div style={{ width: '100%', maxWidth: 360 }}>
-          {OPTIONAL_TOOLS.map(tool => {
+          {getOptionalTools().map(tool => {
             const isSelected = selectedTools.has(tool.id)
             return (
               <div
@@ -199,7 +204,7 @@ export function Setup({ onComplete }: Props) {
         </div>
 
         <button className="btn btn-primary" onClick={handleStartSetup} style={{ marginTop: 8 }}>
-          Start Setup
+          {t('setup_start')}
         </button>
       </div>
     )
@@ -211,7 +216,7 @@ export function Setup({ onComplete }: Props) {
     return (
       <div className="setup-container">
         {renderStepper()}
-        <div className="setup-title">Setting up...</div>
+        <div className="setup-title">{t('setup_setting_up')}</div>
 
         <div style={{ width: '100%', maxWidth: 320 }}>
           <div className="progress-bar">
@@ -229,7 +234,7 @@ export function Setup({ onComplete }: Props) {
           <div style={{ color: 'var(--error)', fontSize: 14, textAlign: 'center' }}>{error}</div>
         )}
 
-        <div className="tip-card">💡 {TIPS[tipIndex]}</div>
+        <div className="tip-card">💡 {getTips()[tipIndex]}</div>
       </div>
     )
   }
@@ -239,16 +244,16 @@ export function Setup({ onComplete }: Props) {
     <div className="setup-container">
       {renderStepper()}
       <div className="setup-logo">✅</div>
-      <div className="setup-title">You're all set!</div>
+      <div className="setup-title">{t('setup_done_title')}</div>
       <div className="setup-subtitle">
-        The terminal will now install runtime components and your selected tools. This takes 3–10 minutes.
+        {t('setup_done_desc')}
       </div>
 
       <button className="btn btn-primary" onClick={() => {
         bridge.call('showTerminal')
         onComplete()
       }}>
-        Open Terminal
+        {t('setup_open_terminal')}
       </button>
     </div>
   )

@@ -1,4 +1,5 @@
 import { useRoute } from '../lib/router'
+import { t, getLocale, setLocale, availableLocales } from '../i18n'
 
 interface MenuItem {
   icon: string
@@ -8,21 +9,45 @@ interface MenuItem {
   badge?: boolean
 }
 
-const MENU: MenuItem[] = [
-  { icon: '📱', label: 'Platforms', desc: 'Manage installed platforms', route: '/settings/platforms' },
-  { icon: '🔄', label: 'Updates', desc: 'Check for updates', route: '/settings/updates', badge: false },
-  { icon: '⚡', label: 'Keep Alive', desc: 'Prevent background killing', route: '/settings/keep-alive' },
-  { icon: '💾', label: 'Storage', desc: 'Manage disk usage', route: '/settings/storage' },
-  { icon: 'ℹ️', label: 'About', desc: 'App info & licenses', route: '/settings/about' },
-]
+function getMenu(): MenuItem[] {
+  return [
+    { icon: '📱', label: t('settings_platforms'), desc: t('settings_platforms_desc'), route: '/settings/platforms' },
+    { icon: '🔄', label: t('settings_updates'), desc: t('settings_updates_desc'), route: '/settings/updates', badge: false },
+    { icon: '⚡', label: t('settings_keep_alive'), desc: t('settings_keep_alive_desc'), route: '/settings/keep-alive' },
+    { icon: '💾', label: t('settings_storage'), desc: t('settings_storage_desc'), route: '/settings/storage' },
+    { icon: 'ℹ️', label: t('settings_about'), desc: t('settings_about_desc'), route: '/settings/about' },
+  ]
+}
 
 export function Settings() {
   const { navigate } = useRoute()
 
   return (
     <div className="page">
-      <div className="page-title" style={{ marginBottom: 24 }}>Settings</div>
-      {MENU.map(item => (
+      <div className="page-title" style={{ marginBottom: 24 }}>{t('settings_title')}</div>
+      {/* Language selector */}
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="card-row">
+          <span className="card-icon">🌐</span>
+          <div className="card-content">
+            <div className="card-label">Language</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {availableLocales.map(loc => (
+              <button
+                key={loc.code}
+                className={`btn ${getLocale() === loc.code ? 'btn-primary' : ''}`}
+                style={{ padding: '4px 12px', fontSize: 13 }}
+                onClick={() => { setLocale(loc.code); window.location.reload() }}
+              >
+                {loc.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {getMenu().map(item => (
         <div key={item.route} className="card" onClick={() => navigate(item.route)}>
           <div className="card-row">
             <span className="card-icon">{item.icon}</span>

@@ -1,5 +1,7 @@
 # OpenClaw on Android
 
+[English](README.md) | [中文](README.zh.md)
+
 <img src="docs/images/openclaw_android.jpg" alt="OpenClaw on Android">
 
 ![Android 7.0+](https://img.shields.io/badge/Android-7.0%2B-brightgreen)

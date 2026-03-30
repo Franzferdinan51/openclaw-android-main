@@ -21,6 +21,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 - Bump eslint-plugin-react-refresh 0.4.24 → 0.5.2
 - Bump GitHub Actions: checkout v4→v6, setup-node v4→v6, setup-java v4→v5, upload-artifact v4→v7, download-artifact v4→v8
 
+## [App v0.4.0 / Script v1.0.12] - 2026-03-30
+
+### Added
+
+- App: i18n support — English, Korean (한국어), Chinese (中文) with auto-detection
+- App: Language selector in Settings
+- Add Chinese README (README.zh.md) with China mirror download link
+- Add language switcher links to README.md, README.ko.md, README.zh.md
+- GitHub mirror fallback for China/restricted networks (ghfast.top, ghproxy.net)
+- npm registry auto-switch to npmmirror.com when npmjs.org is unreachable
+- Add AppLogger centralized logging wrapper, replace all android.util.Log calls
+- Add unit test infrastructure (JUnit5 + MockK, 22 tests)
+- Add CI code-quality workflow (shellcheck, sync check, markdownlint, doc freshness, kotlin lint, unit tests)
+- Add shellcheck, markdownlint to pre-commit hook
+- Add post-setup.sh sync verification to pre-commit hook
+- Add Claude Code hooks (push warning, document freshness, shellcheck auto-run)
+
+### Changed
+
+- Resolve all 48 detekt violations — no baseline needed
+- Resolve all 43 shellcheck violations across all scripts
+- Resolve all 125 markdownlint violations across all documents
+- Refactor BootstrapManager, JsBridge, MainActivity for reduced complexity
+- Convert A&&B||C patterns to if/then/else in install.sh, install-tools.sh
+- Bump app version to v0.4.0 (versionCode 9)
+- Bump script version to v1.0.12
+
 ## [1.0.6] - 2026-03-10
 
 ### Changed

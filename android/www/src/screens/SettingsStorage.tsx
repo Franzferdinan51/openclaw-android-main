@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useRoute } from '../lib/router'
 import { bridge } from '../lib/bridge'
+import { t } from '../i18n'
 
 interface StorageInfo {
   totalBytes: number
@@ -48,19 +49,19 @@ export function SettingsStorage() {
     <div className="page">
       <div className="page-header">
         <button className="back-btn" onClick={() => navigate('/settings')}>←</button>
-        <div className="page-title">Storage</div>
+        <div className="page-title">{t('storage_title')}</div>
       </div>
 
       {info && (
         <>
           <div style={{ fontSize: 15, marginBottom: 20 }}>
-            Total used: <strong>{formatBytes(totalUsed)}</strong>
+            {t('storage_total')}<strong>{formatBytes(totalUsed)}</strong>
           </div>
 
           <div className="card">
             <div className="card-row">
               <div className="card-content">
-                <div className="card-label">Bootstrap (usr/)</div>
+                <div className="card-label">{t('storage_bootstrap')}</div>
                 <div className="card-desc">{formatBytes(info.bootstrapBytes)}</div>
               </div>
             </div>
@@ -78,7 +79,7 @@ export function SettingsStorage() {
           <div className="card">
             <div className="card-row">
               <div className="card-content">
-                <div className="card-label">Web UI (www/)</div>
+                <div className="card-label">{t('storage_www')}</div>
                 <div className="card-desc">{formatBytes(info.wwwBytes)}</div>
               </div>
             </div>
@@ -96,7 +97,7 @@ export function SettingsStorage() {
           <div className="card">
             <div className="card-row">
               <div className="card-content">
-                <div className="card-label">Free Space</div>
+                <div className="card-label">{t('storage_free')}</div>
                 <div className="card-desc">{formatBytes(info.freeBytes)}</div>
               </div>
             </div>
@@ -108,7 +109,7 @@ export function SettingsStorage() {
               onClick={handleClearCache}
               disabled={clearing}
             >
-              {clearing ? 'Clearing...' : 'Clear Cache'}
+              {clearing ? t('storage_clearing') : t('storage_clear')}
             </button>
           </div>
         </>
@@ -116,7 +117,7 @@ export function SettingsStorage() {
 
       {!info && (
         <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: 40 }}>
-          Loading storage info...
+          {t('storage_loading')}
         </div>
       )}
     </div>

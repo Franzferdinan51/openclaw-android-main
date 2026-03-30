@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useRoute } from '../lib/router'
 import { bridge } from '../lib/bridge'
+import { t } from '../i18n'
 
 interface AppInfo {
   versionName: string
@@ -43,7 +44,7 @@ export function SettingsAbout() {
     <div className="page">
       <div className="page-header">
         <button className="back-btn" onClick={() => navigate('/settings')}>←</button>
-        <div className="page-title">About</div>
+        <div className="page-title">{t('about_title')}</div>
       </div>
 
       <div style={{ textAlign: 'center', padding: '24px 0' }}>
@@ -51,10 +52,10 @@ export function SettingsAbout() {
         <div style={{ fontSize: 20, fontWeight: 700 }}>Claw</div>
       </div>
 
-      <div className="section-title">Version</div>
+      <div className="section-title">{t('about_version')}</div>
       <div className="card">
         <div className="info-row">
-          <span className="label">APK</span>
+          <span className="label">{t('about_apk')}</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {appInfo?.versionName || '\u2014'}
             {apkUpdateAvailable && (
@@ -64,22 +65,22 @@ export function SettingsAbout() {
                   borderRadius: 4, padding: '1px 6px', cursor: 'pointer'
                 }}
                 onClick={() => bridge.call('openUrl', 'https://github.com/AidanPark/openclaw-android/releases/latest')}
-              >Update available</span>
+              >{t('about_update_available')}</span>
             )}
           </span>
         </div>
 
         <div className="info-row">
-          <span className="label">Package</span>
+          <span className="label">{t('about_package')}</span>
           <span style={{ fontSize: 12 }}>{appInfo?.packageName || '—'}</span>
         </div>
         <div className="info-row">
-          <span className="label">Script</span>
+          <span className="label">{t('about_script')}</span>
           <span>{scriptVersion}</span>
         </div>
       </div>
 
-      <div className="section-title">Runtime</div>
+      <div className="section-title">{t('about_runtime')}</div>
       <div className="card">
         {Object.entries(runtimeInfo).map(([key, val]) => (
           <div className="info-row" key={key}>
@@ -93,7 +94,7 @@ export function SettingsAbout() {
 
       <div className="card">
         <div className="info-row">
-          <span className="label">License</span>
+          <span className="label">{t('about_license')}</span>
           <span>GPL v3</span>
         </div>
       </div>
@@ -106,7 +107,7 @@ export function SettingsAbout() {
             bridge.call('openSystemSettings', 'app_info')
           }}
         >
-          App Info
+          {t('about_app_info')}
         </button>
       </div>
 
@@ -116,7 +117,7 @@ export function SettingsAbout() {
         fontSize: 13,
         marginTop: 32,
       }}>
-        Made for Android
+        {t('about_made_for')}
       </div>
     </div>
   )

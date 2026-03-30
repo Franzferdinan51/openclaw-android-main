@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRoute } from '../lib/router'
 import { bridge } from '../lib/bridge'
 import { useNativeEvent } from '../lib/useNativeEvent'
+import { t } from '../i18n'
 
 interface Platform {
   id: string
@@ -46,12 +47,12 @@ export function SettingsPlatforms() {
     <div className="page">
       <div className="page-header">
         <button className="back-btn" onClick={() => navigate('/settings')}>←</button>
-        <div className="page-title">Platforms</div>
+        <div className="page-title">{t('platforms_title')}</div>
       </div>
 
       {installing && (
         <div className="card" style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 14, marginBottom: 8 }}>Installing {installing}...</div>
+          <div style={{ fontSize: 14, marginBottom: 8 }}>{t('platforms_installing', { name: installing })}</div>
           <div className="progress-bar">
             <div className="progress-fill" style={{ width: `${Math.round(progress * 100)}%` }} />
           </div>
@@ -69,7 +70,7 @@ export function SettingsPlatforms() {
                   {p.name}
                   {isActive && (
                     <span style={{ color: 'var(--success)', fontSize: 12, marginLeft: 8 }}>
-                      Active
+                      {t('platforms_active')}
                     </span>
                   )}
                 </div>
@@ -81,7 +82,7 @@ export function SettingsPlatforms() {
                   onClick={() => handleInstall(p.id)}
                   disabled={installing !== null}
                 >
-                  Install & Switch
+                  {t('platforms_install')}
                 </button>
               )}
             </div>

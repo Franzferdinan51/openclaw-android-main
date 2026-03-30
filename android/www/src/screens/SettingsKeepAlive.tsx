@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useRoute } from '../lib/router'
 import { bridge } from '../lib/bridge'
+import { t } from '../i18n'
 
 export function SettingsKeepAlive() {
   const { navigate } = useRoute()
@@ -33,65 +34,65 @@ export function SettingsKeepAlive() {
     <div className="page">
       <div className="page-header">
         <button className="back-btn" onClick={() => navigate('/settings')}>←</button>
-        <div className="page-title">Keep Alive</div>
+        <div className="page-title">{t('ka_title')}</div>
       </div>
 
       <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 20, lineHeight: 1.6 }}>
-        Android may kill background processes after a while. Follow these steps to prevent it.
+        {t('ka_desc')}
       </div>
 
       {/* 1. Battery Optimization */}
-      <div className="section-title">1. Battery Optimization</div>
+      <div className="section-title">{t('ka_battery')}</div>
       <div className="card">
         <div className="card-row">
           <div className="card-content">
-            <div className="card-label">Status</div>
+            <div className="card-label">{t('ka_status')}</div>
           </div>
           {batteryExcluded ? (
-            <span style={{ color: 'var(--success)', fontSize: 14 }}>✓ Excluded</span>
+            <span style={{ color: 'var(--success)', fontSize: 14 }}>{t('ka_excluded')}</span>
           ) : (
             <button className="btn btn-small btn-primary" onClick={handleRequestExclusion}>
-              Request Exclusion
+              {t('ka_request')}
             </button>
           )}
         </div>
       </div>
 
       {/* 2. Developer Options */}
-      <div className="section-title">2. Developer Options</div>
+      <div className="section-title">{t('ka_developer')}</div>
       <div className="card">
         <div style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>
-          • Enable Developer Options<br />
-          • Enable "Stay Awake"
+          {t('ka_developer_desc').split('\n').map((line, i) => (
+            <span key={i}>{line}{i < t('ka_developer_desc').split('\n').length - 1 && <br />}</span>
+          ))}
         </div>
         <button
           className="btn btn-small btn-secondary"
           onClick={() => bridge.call('openSystemSettings', 'developer')}
         >
-          Open Developer Options
+          {t('ka_open_dev')}
         </button>
       </div>
 
       {/* 3. Phantom Process Killer */}
-      <div className="section-title">3. Phantom Process Killer (Android 12+)</div>
+      <div className="section-title">{t('ka_phantom')}</div>
       <div className="card">
         <div style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>
-          Connect USB and enable ADB debugging, then run this command on your PC:
+          {t('ka_phantom_desc')}
         </div>
         <div className="code-block">
           {ppkCommand}
           <button className="copy-btn" onClick={handleCopyCommand}>
-            {copied ? 'Copied!' : 'Copy'}
+            {copied ? t('ka_copied') : t('ka_copy')}
           </button>
         </div>
       </div>
 
       {/* 4. Charge Limit */}
-      <div className="section-title">4. Charge Limit (Optional)</div>
+      <div className="section-title">{t('ka_charge')}</div>
       <div className="card">
         <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-          Set battery charge limit to 80% for always-on use. This can be configured in
-          your phone's battery settings.
+          {t('ka_charge_desc')}
         </div>
       </div>
     </div>

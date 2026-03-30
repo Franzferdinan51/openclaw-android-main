@@ -17,7 +17,8 @@ else
     YELLOW='\033[1;33m'
     BOLD='\033[1m'
     NC='\033[0m'
-    REPO_BASE="https://raw.githubusercontent.com/AidanPark/openclaw-android/main"
+    REPO_BASE_ORIGIN="https://raw.githubusercontent.com/AidanPark/openclaw-android/main"
+    REPO_BASE="$REPO_BASE_ORIGIN"
     PLATFORM_MARKER="$PROJECT_DIR/.platform"
 
     detect_platform() {
@@ -25,6 +26,24 @@ else
             cat "$PLATFORM_MARKER"
             return 0
         fi
+        return 1
+    }
+
+    resolve_repo_base() {
+        if curl -sI --connect-timeout 3 "$REPO_BASE_ORIGIN/oa.sh" >/dev/null 2>&1; then
+            REPO_BASE="$REPO_BASE_ORIGIN"; return 0
+        fi
+        local mirrors=(
+            "https://ghfast.top/$REPO_BASE_ORIGIN"
+            "https://ghproxy.net/$REPO_BASE_ORIGIN"
+            "https://mirror.ghproxy.com/$REPO_BASE_ORIGIN"
+        )
+        for m in "${mirrors[@]}"; do
+            if curl -sI --connect-timeout 3 "$m/oa.sh" >/dev/null 2>&1; then
+                echo -e "  ${YELLOW}[MIRROR]${NC} Using mirror for GitHub downloads"
+                REPO_BASE="$m"; return 0
+            fi
+        done
         return 1
     }
 fi
@@ -172,6 +191,9 @@ cmd_install() {
     bash "$TMPFILE"
     rm -f "$TMPFILE"
 }
+
+# Resolve mirror before any network operation
+case "${1:-}" in --update|--install|--version|-v|--uninstall) resolve_repo_base || true ;; esac
 
 case "${1:-}" in
     --update)

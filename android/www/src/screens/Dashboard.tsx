@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { bridge } from '../lib/bridge'
+import { t } from '../i18n'
 
 interface BootstrapStatus {
   installed: boolean
@@ -11,17 +12,21 @@ interface PlatformInfo {
   name: string
 }
 
-const COMMANDS = [
-  { label: 'Gateway', cmd: 'openclaw gateway', desc: 'Start the gateway' },
-  { label: 'Status', cmd: 'openclaw status', desc: 'Show gateway status' },
-  { label: 'Onboard', cmd: 'openclaw onboard', desc: 'Initial setup wizard' },
-  { label: 'Logs', cmd: 'openclaw logs --follow', desc: 'Follow live logs' },
-]
+function getCommands() {
+  return [
+    { label: 'Gateway', cmd: 'openclaw gateway', desc: t('cmd_gateway') },
+    { label: 'Status', cmd: 'openclaw status', desc: t('cmd_status') },
+    { label: 'Onboard', cmd: 'openclaw onboard', desc: t('cmd_onboard') },
+    { label: 'Logs', cmd: 'openclaw logs --follow', desc: t('cmd_logs') },
+  ]
+}
 
-const MANAGEMENT = [
-  { label: 'Update', cmd: 'oa --update', desc: 'Update OpenClaw and all components' },
-  { label: 'Install Tools', cmd: 'oa --install', desc: 'Add or remove optional tools' },
-]
+function getManagement() {
+  return [
+    { label: 'Update', cmd: 'oa --update', desc: t('cmd_update') },
+    { label: 'Install Tools', cmd: 'oa --install', desc: t('cmd_install_tools') },
+  ]
+}
 
 export function Dashboard() {
   const [status, setStatus] = useState<BootstrapStatus | null>(null)
@@ -61,9 +66,9 @@ export function Dashboard() {
       <div className="page">
         <div className="setup-container" style={{ minHeight: 'calc(100vh - 80px)' }}>
           <img src="./openclaw.svg" alt="OpenClaw" style={{ width: 64, height: 64, marginBottom: 4 }} />
-          <div className="setup-title">Setup Required</div>
+          <div className="setup-title">{t('dash_setup_required')}</div>
           <div className="setup-subtitle">
-            The runtime environment hasn't been set up yet.
+            {t('dash_setup_desc')}
           </div>
         </div>
       </div>
@@ -83,9 +88,9 @@ export function Dashboard() {
       </div>
 
       {/* Commands */}
-      <div className="section-title">Commands</div>
+      <div className="section-title">{t('dash_commands')}</div>
       <div className="card">
-        {COMMANDS.map((item, i) => (
+        {getCommands().map((item, i) => (
           <div
             key={item.cmd}
             className="card-row"
@@ -102,7 +107,7 @@ export function Dashboard() {
       </div>
 
       {/* Runtime info */}
-      <div className="section-title">Runtime</div>
+      <div className="section-title">{t('dash_runtime')}</div>
       <div className="card">
         {Object.entries(runtimeInfo).map(([key, val]) => (
           <div className="info-row" key={key}>
@@ -113,9 +118,9 @@ export function Dashboard() {
       </div>
 
       {/* Management */}
-      <div className="section-title">Management</div>
+      <div className="section-title">{t('dash_management')}</div>
       <div className="card">
-        {MANAGEMENT.map((item, i) => (
+        {getManagement().map((item, i) => (
           <div
             key={item.cmd}
             className="card-row"

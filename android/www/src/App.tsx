@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Route, useRoute } from './lib/router'
 import { bridge } from './lib/bridge'
 import { useNativeEvent } from './lib/useNativeEvent'
+import { t } from './i18n'
 import { Setup } from './screens/Setup'
 import { Dashboard } from './screens/Dashboard'
 import { Settings } from './screens/Settings'
@@ -72,19 +73,19 @@ export function App() {
           className="tab-bar-item"
           onClick={() => handleTabClick('terminal')}
         >
-          🖥 Terminal
+          {t('tab_terminal')}
         </button>
         <button
           className={`tab-bar-item ${activeTab === 'dashboard' ? 'active' : ''}`}
           onClick={() => handleTabClick('dashboard')}
         >
-          📊 Dashboard
+          {t('tab_dashboard')}
         </button>
         <button
           className={`tab-bar-item ${activeTab === 'settings' ? 'active' : ''}`}
           onClick={() => handleTabClick('settings')}
         >
-          ⚙ Settings
+          {t('tab_settings')}
           {hasUpdates && <span className="badge" />}
         </button>
       </nav>

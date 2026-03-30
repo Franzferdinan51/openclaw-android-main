@@ -30,6 +30,27 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+# ─── GitHub mirror fallback (for China/restricted networks) ──
+REPO_BASE_ORIGIN="https://raw.githubusercontent.com/AidanPark/openclaw-android/main"
+REPO_BASE="$REPO_BASE_ORIGIN"
+resolve_repo_base() {
+    if curl -sI --connect-timeout 3 "$REPO_BASE_ORIGIN/oa.sh" >/dev/null 2>&1; then
+        REPO_BASE="$REPO_BASE_ORIGIN"; return 0
+    fi
+    local mirrors=(
+        "https://ghfast.top/$REPO_BASE_ORIGIN"
+        "https://ghproxy.net/$REPO_BASE_ORIGIN"
+        "https://mirror.ghproxy.com/$REPO_BASE_ORIGIN"
+    )
+    for m in "${mirrors[@]}"; do
+        if curl -sI --connect-timeout 3 "$m/oa.sh" >/dev/null 2>&1; then
+            echo -e "  ${YELLOW}[MIRROR]${NC} Using mirror for GitHub downloads"
+            REPO_BASE="$m"; return 0
+        fi
+    done
+    return 1
+}
+
 # SSL cert for curl (bootstrap curl looks at hardcoded com.termux path)
 export CURL_CA_BUNDLE="$PREFIX/etc/tls/cert.pem"
 export SSL_CERT_FILE="$PREFIX/etc/tls/cert.pem"
@@ -321,6 +342,15 @@ fi
 echo -e "▸ ${YELLOW}[4/7]${NC} Installing OpenClaw..."
 export PATH="$NODE_DIR/bin:$PATH"
 
+# Auto-detect GitHub mirror for restricted networks
+resolve_repo_base
+
+# Auto-detect slow npm registry and switch to Chinese mirror
+if ! curl -sI --connect-timeout 3 https://registry.npmjs.org >/dev/null 2>&1; then
+    echo "  npm registry unreachable, switching to npmmirror.com..."
+    npm config set registry https://registry.npmmirror.com
+fi
+
 # Force git to use HTTPS instead of SSH (no SSH client available)
 # Write .gitconfig directly to avoid --add/--replace-all issues on repeated runs
 cat > "$HOME/.gitconfig" << GITCFG
@@ -421,7 +451,7 @@ if [ -f "$COMPAT_SRC" ]; then
     cp "$COMPAT_SRC" "$OCA_DIR/patches/glibc-compat.js"
 else
     # Fallback: download from repo
-    curl -fsSL "https://raw.githubusercontent.com/AidanPark/openclaw-android/main/patches/glibc-compat.js" \
+    curl -fsSL "$REPO_BASE/patches/glibc-compat.js" \
         -o "$OCA_DIR/patches/glibc-compat.js" 2>/dev/null || true
 fi
 
@@ -469,7 +499,7 @@ BASHRC
 echo -e "  ${GREEN}✓${NC} ~/.bashrc configured"
 
 # oa CLI (enables oa --update, oa --backup, etc.)
-if curl -fsSL "https://raw.githubusercontent.com/AidanPark/openclaw-android/main/oa.sh" \
+if curl -fsSL "$REPO_BASE/oa.sh" \
         -o "$PREFIX/bin/oa" 2>/dev/null; then
     chmod +x "$PREFIX/bin/oa"
     echo -e "  ${GREEN}✓${NC} oa CLI installed"

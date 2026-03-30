@@ -8,7 +8,8 @@ RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-REPO_BASE="https://raw.githubusercontent.com/AidanPark/openclaw-android/main"
+REPO_BASE_ORIGIN="https://raw.githubusercontent.com/AidanPark/openclaw-android/main"
+REPO_BASE="$REPO_BASE_ORIGIN"
 LOGFILE="$HOME/.openclaw-android/update.log"
 
 # Ensure curl is available
@@ -16,6 +17,26 @@ if ! command -v curl &>/dev/null; then
     echo -e "${RED}[FAIL]${NC} curl not found. Install it with: pkg install curl"
     exit 1
 fi
+
+# GitHub mirror fallback for restricted networks
+resolve_repo_base() {
+    if curl -sI --connect-timeout 3 "$REPO_BASE_ORIGIN/oa.sh" >/dev/null 2>&1; then
+        REPO_BASE="$REPO_BASE_ORIGIN"; return 0
+    fi
+    local mirrors=(
+        "https://ghfast.top/$REPO_BASE_ORIGIN"
+        "https://ghproxy.net/$REPO_BASE_ORIGIN"
+        "https://mirror.ghproxy.com/$REPO_BASE_ORIGIN"
+    )
+    for m in "${mirrors[@]}"; do
+        if curl -sI --connect-timeout 3 "$m/oa.sh" >/dev/null 2>&1; then
+            echo -e "${YELLOW}[MIRROR]${NC} Using mirror for GitHub downloads"
+            REPO_BASE="$m"; return 0
+        fi
+    done
+    return 1
+}
+resolve_repo_base
 
 # Prepare log directory
 mkdir -p "$HOME/.openclaw-android"

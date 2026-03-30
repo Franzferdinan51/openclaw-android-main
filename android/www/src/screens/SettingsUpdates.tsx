@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRoute } from '../lib/router'
 import { bridge } from '../lib/bridge'
 import { useNativeEvent } from '../lib/useNativeEvent'
+import { t } from '../i18n'
 
 interface UpdateItem {
   component: string
@@ -42,24 +43,24 @@ export function SettingsUpdates() {
     <div className="page">
       <div className="page-header">
         <button className="back-btn" onClick={() => navigate('/settings')}>←</button>
-        <div className="page-title">Updates</div>
+        <div className="page-title">{t('updates_title')}</div>
       </div>
 
       {checking && (
         <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: 40 }}>
-          Checking for updates...
+          {t('updates_checking')}
         </div>
       )}
 
       {!checking && updates.length === 0 && (
         <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: 40 }}>
-          Everything is up to date.
+          {t('updates_up_to_date')}
         </div>
       )}
 
       {updating && (
         <div className="card" style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 14, marginBottom: 8 }}>Updating {updating}...</div>
+          <div style={{ fontSize: 14, marginBottom: 8 }}>{t('updates_updating', { name: updating })}</div>
           <div className="progress-bar">
             <div className="progress-fill" style={{ width: `${Math.round(progress * 100)}%` }} />
           </div>
@@ -80,7 +81,7 @@ export function SettingsUpdates() {
               onClick={() => handleApply(u.component)}
               disabled={updating !== null}
             >
-              Update
+              {t('updates_update')}
             </button>
           </div>
         </div>

@@ -13,11 +13,37 @@ NC='\033[0m'
 # ── Project constants ──
 PROJECT_DIR="$HOME/.openclaw-android"
 PLATFORM_MARKER="$PROJECT_DIR/.platform"
-REPO_BASE="https://raw.githubusercontent.com/AidanPark/openclaw-android/main"
+REPO_BASE_ORIGIN="https://raw.githubusercontent.com/AidanPark/openclaw-android/main"
+REPO_BASE_MIRRORS=(
+    "https://ghfast.top/https://raw.githubusercontent.com/AidanPark/openclaw-android/main"
+    "https://ghproxy.net/https://raw.githubusercontent.com/AidanPark/openclaw-android/main"
+    "https://mirror.ghproxy.com/https://raw.githubusercontent.com/AidanPark/openclaw-android/main"
+)
+
+# Detect reachable REPO_BASE (origin first, then mirrors)
+resolve_repo_base() {
+    if curl -sI --connect-timeout 3 "$REPO_BASE_ORIGIN/oa.sh" >/dev/null 2>&1; then
+        REPO_BASE="$REPO_BASE_ORIGIN"
+        return 0
+    fi
+    for mirror in "${REPO_BASE_MIRRORS[@]}"; do
+        if curl -sI --connect-timeout 3 "$mirror/oa.sh" >/dev/null 2>&1; then
+            echo -e "  ${YELLOW}[MIRROR]${NC} Using mirror: ${mirror%%/oa.sh*}"
+            REPO_BASE="$mirror"
+            return 0
+        fi
+    done
+    # Fallback to origin even if unreachable
+    REPO_BASE="$REPO_BASE_ORIGIN"
+    return 1
+}
+
+# Initialize REPO_BASE
+REPO_BASE="$REPO_BASE_ORIGIN"
 
 BASHRC_MARKER_START="# >>> OpenClaw on Android >>>"
 BASHRC_MARKER_END="# <<< OpenClaw on Android <<<"
-OA_VERSION="1.0.11"
+OA_VERSION="1.0.12"
 
 # ── Platform detection ──
 # 1. Explicit marker file (new install and after first update)

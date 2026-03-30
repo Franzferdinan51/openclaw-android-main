@@ -94,13 +94,31 @@ jobs:
           check_doc '^scripts/install-' '^README\.md$' 'install scripts'
           check_doc '^platforms/openclaw/' '^README\.md$' 'platform scripts'
 
-          for doc in $(echo "$CHANGED" | grep -E '^docs/.*\.md$' | grep -v '\.ko\.md$'); do
+          # Check 3-language sync for docs/ files
+          for doc in $(echo "$CHANGED" | grep -E '^docs/.*\.md$' | grep -v '\.(ko|zh)\.md$'); do
             ko_doc="${doc%.md}.ko.md"
+            zh_doc="${doc%.md}.zh.md"
             if [ -f "$ko_doc" ] && ! echo "$CHANGED" | grep -qF "$ko_doc"; then
               echo "Warning: $doc changed but Korean version $ko_doc was not updated."
               WARN=1
             fi
+            if [ -f "$zh_doc" ] && ! echo "$CHANGED" | grep -qF "$zh_doc"; then
+              echo "Warning: $doc changed but Chinese version $zh_doc was not updated."
+              WARN=1
+            fi
           done
+
+          # Check 3-language sync for README
+          if echo "$CHANGED" | grep -qE '^README\.md$'; then
+            if ! echo "$CHANGED" | grep -qE '^README\.ko\.md$'; then
+              echo "Warning: README.md changed but README.ko.md was not updated."
+              WARN=1
+            fi
+            if ! echo "$CHANGED" | grep -qE '^README\.zh\.md$'; then
+              echo "Warning: README.md changed but README.zh.md was not updated."
+              WARN=1
+            fi
+          fi
 
           if [ "$WARN" -eq 1 ]; then
             echo ""
