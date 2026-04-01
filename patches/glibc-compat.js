@@ -83,27 +83,52 @@ os.cpus = function cpus() {
 // ─── os.networkInterfaces() safety ──────────────────────────
 // Some Android configurations throw EACCES when reading network
 // interface information. Wrap with try-catch to prevent crashes.
+//
+// Additionally, Android/Termux typically only exposes the loopback
+// interface (`lo`) to Node.js. In that situation, OpenClaw's Bonjour
+// advertiser can't send multicast announcements and logs noisy
+// "Announcement failed as of socket errors!" repeatedly.
+// Auto-disable Bonjour via OPENCLAW_DISABLE_BONJOUR when only
+// loopback interfaces are visible.
 
 const _originalNetworkInterfaces = os.networkInterfaces;
 
-os.networkInterfaces = function networkInterfaces() {
+function _createLoopbackInterfaces() {
+  return {
+    lo: [
+      {
+        address: '127.0.0.1',
+        netmask: '255.0.0.0',
+        family: 'IPv4',
+        mac: '00:00:00:00:00:00',
+        internal: true,
+        cidr: '127.0.0.1/8',
+      },
+    ],
+  };
+}
+
+function _hasNonLoopbackInterface(interfaces) {
   try {
-    return _originalNetworkInterfaces.call(os);
+    return Object.values(interfaces).some(entries =>
+      Array.isArray(entries) && entries.some(entry => entry && entry.internal === false)
+    );
   } catch {
-    // Return minimal loopback interface
-    return {
-      lo: [
-        {
-          address: '127.0.0.1',
-          netmask: '255.0.0.0',
-          family: 'IPv4',
-          mac: '00:00:00:00:00:00',
-          internal: true,
-          cidr: '127.0.0.1/8',
-        },
-      ],
-    };
+    return false;
   }
+}
+
+os.networkInterfaces = function networkInterfaces() {
+  let interfaces;
+  try {
+    interfaces = _originalNetworkInterfaces.call(os);
+  } catch {
+    interfaces = _createLoopbackInterfaces();
+  }
+  if (!process.env.OPENCLAW_DISABLE_BONJOUR && !_hasNonLoopbackInterface(interfaces)) {
+    process.env.OPENCLAW_DISABLE_BONJOUR = '1';
+  }
+  return interfaces;
 };
 
 // ─── /bin/sh path shim (Android 7-8 only) ───────────────────

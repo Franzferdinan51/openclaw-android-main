@@ -4,11 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Script v1.0.14] - 2026-03-31
+## [Script v1.0.14] - 2026-04-01
 
 ### Fixed
 
-- Disable mDNS/Bonjour on all delivery paths (app install, Termux install, update) — multicast sockets are unavailable in Termux, causing repeated "Announcement failed as of socket errors!" gateway logs ([#84](https://github.com/AidanPark/openclaw-android/issues/84))
+- Auto-disable Bonjour/mDNS at runtime when only loopback interface is visible — Android/Termux cannot send multicast, causing repeated "Announcement failed as of socket errors!" gateway logs ([#84](https://github.com/AidanPark/openclaw-android/issues/84))
 
 ## [Script v1.0.13] - 2026-03-31
 
