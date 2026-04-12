@@ -346,7 +346,7 @@ class JsBridge(
                     "gemini-cli" ->
                         "npm install -g @google/gemini-cli"
                     "codex-cli" ->
-                        "npm install -g @openai/codex"
+                        "npm install -g @mmmbuto/codex-cli-termux"
                     // OpenCode (Bun-based) — requires proot + ld.so concatenation
                     "opencode" ->
                         "curl -fsSL https://raw.githubusercontent.com/" +
@@ -390,7 +390,7 @@ class JsBridge(
                     "gemini-cli" ->
                         "npm uninstall -g @google/gemini-cli"
                     "codex-cli" ->
-                        "npm uninstall -g @openai/codex"
+                        "npm uninstall -g @mmmbuto/codex-cli-termux"
                     "opencode" ->
                         "rm -f \$PREFIX/bin/opencode" +
                             " \$HOME/.openclaw-android/bin/ld.so.opencode" +

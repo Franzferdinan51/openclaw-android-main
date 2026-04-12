@@ -99,7 +99,7 @@ if command -v gemini &>/dev/null; then
     AI_TOOL_LABELS+=("Gemini CLI")
 fi
 if command -v codex &>/dev/null; then
-    AI_TOOLS_FOUND+=("@openai/codex")
+    AI_TOOLS_FOUND+=("@mmmbuto/codex-cli-termux")
     AI_TOOL_LABELS+=("Codex CLI")
 fi
 

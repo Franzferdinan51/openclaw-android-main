@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Script v1.0.26] - 2026-04-12
+
+### Changed
+
+- Switch Codex CLI from upstream `@openai/codex` to Termux-optimized `@mmmbuto/codex-cli-termux` (DioNanos/codex-termux fork). The upstream package ships a static musl binary whose DNS resolver hardcodes `/etc/resolv.conf` — a file that doesn't exist on Android — causing unreliable network connections. The fork builds as a dynamic Bionic binary that uses Android's native DNS stack, fixing the `Stream disconnected` / `error sending request` pattern reported by users behind proxies. CLI command name (`codex`) is unchanged. ([#108](https://github.com/AidanPark/openclaw-android/issues/108))
+
 ## [Script v1.0.25] - 2026-04-11
 
 ### Fixed

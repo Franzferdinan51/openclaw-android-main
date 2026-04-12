@@ -9,7 +9,7 @@ NC='\033[0m'
 
 PROJECT_DIR="$HOME/.openclaw-android"
 PLATFORM_MARKER="$PROJECT_DIR/.platform"
-OA_VERSION="1.0.25"
+OA_VERSION="1.0.26"
 
 echo ""
 echo -e "${BOLD}========================================${NC}"
@@ -311,7 +311,7 @@ update_ai_tool() {
 AI_FOUND=false
 update_ai_tool "claude" "@anthropic-ai/claude-code" "Claude Code" && AI_FOUND=true
 update_ai_tool "gemini" "@google/gemini-cli" "Gemini CLI" && AI_FOUND=true
-update_ai_tool "codex" "@openai/codex" "Codex CLI" && AI_FOUND=true
+update_ai_tool "codex" "@mmmbuto/codex-cli-termux" "Codex CLI" && AI_FOUND=true
 if [ "$AI_FOUND" = false ]; then
     echo -e "${YELLOW}[SKIP]${NC} No AI CLI tools installed"
 fi

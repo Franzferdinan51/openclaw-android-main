@@ -700,7 +700,7 @@ PWENV
         }
         [ "${INSTALL_CODEX_CLI:-false}" = "true" ] && {
             echo "  Installing Codex CLI..."
-            npm install -g @openai/codex 2>&1 || true
+            npm install -g @mmmbuto/codex-cli-termux 2>&1 || true
             echo -e "  ${GREEN}✓${NC} Codex CLI"
         }
 
