@@ -49,6 +49,56 @@ openclaw gateway
 
 If the above steps don't help, fully close and reopen the Termux app, then run `openclaw gateway`. Rebooting the phone will reliably clear all state.
 
+## Desktop OpenClaw conflicts with the phone tunnel
+
+### Symptoms
+
+- Your computer's OpenClaw dashboard suddenly opens the phone instance instead of the desktop instance
+- Telegram native approvals or other desktop gateway clients fail with `gateway token mismatch`
+- `adb forward --list` shows `tcp:18789 tcp:18789`
+
+### Cause
+
+The phone gateway itself is not the problem. The conflict happens when the phone is tunneled onto the **same local port** that your desktop OpenClaw gateway already uses.
+
+Examples of conflicting commands:
+
+```bash
+adb -s <device-serial> forward tcp:18789 tcp:18789
+ssh -N -L 18789:127.0.0.1:18789 -p 8022 <phone-ip>
+```
+
+Both commands bind your computer's `127.0.0.1:18789`, which shadows the desktop gateway.
+
+### Solution
+
+Keep the phone side on port `18789`, but move the **local** side to another port such as `28789`.
+
+#### ADB
+
+```bash
+adb -s <device-serial> forward --remove tcp:18789
+adb -s <device-serial> forward tcp:28789 tcp:18789
+```
+
+#### SSH
+
+```bash
+ssh -N -L 28789:127.0.0.1:18789 -p 8022 <phone-ip>
+```
+
+Then use:
+
+```text
+http://127.0.0.1:28789
+```
+
+for the phone dashboard, while leaving your desktop OpenClaw gateway on:
+
+```text
+http://127.0.0.1:18789
+```
+
 ## Gateway disconnected: "gateway not connected"
 
 ```

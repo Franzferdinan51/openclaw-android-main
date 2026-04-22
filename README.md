@@ -169,12 +169,15 @@ Android may kill background processes or throttle them when the screen is off. S
 
 See the [Termux SSH Setup Guide](docs/termux-ssh-guide.md) for SSH access and dashboard tunnel setup.
 
+> If your computer already runs its own OpenClaw gateway on port `18789`, do **not** tunnel the phone to local `18789` as well. Use a different local port such as `28789` and keep the phone side on `127.0.0.1:18789`.
+
 ## Managing Multiple Devices
 
 If you run OpenClaw on multiple devices on the same network, use the <a href="https://myopenclawhub.com" target="_blank">Dashboard Connect</a> tool to manage them from your PC.
 
 - Save connection settings (IP, token, ports) for each device with a nickname
 - Generates the SSH tunnel command and dashboard URL automatically
+- If your PC already has a local OpenClaw gateway on `18789`, change the generated **local** port to something else such as `28789` so the tunnel does not hijack your desktop gateway
 - **Your data stays local** — Connection settings (IP, token, ports) are saved only in your browser's localStorage and are never sent to any server.
 
 ## CLI Reference

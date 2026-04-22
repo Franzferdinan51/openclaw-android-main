@@ -71,6 +71,46 @@ ssh -p 8022 192.168.45.139
 
 Once connected, you'll see the Termux `$` prompt. From now on, you can type all Termux commands using your computer keyboard.
 
+## Step 6: Create a Dashboard Tunnel
+
+To open the phone's OpenClaw dashboard in your computer browser, forward a **local** port on your computer to the phone's `127.0.0.1:18789`.
+
+### If your computer does not run OpenClaw locally
+
+You can use local port `18789`:
+
+```bash
+ssh -N -L 18789:127.0.0.1:18789 -p 8022 192.168.45.139
+```
+
+Then open:
+
+```text
+http://127.0.0.1:18789
+```
+
+### If your computer already runs OpenClaw on port 18789
+
+Use a different **local** port such as `28789` so the phone tunnel does not conflict with your desktop gateway:
+
+```bash
+ssh -N -L 28789:127.0.0.1:18789 -p 8022 192.168.45.139
+```
+
+Then open:
+
+```text
+http://127.0.0.1:28789
+```
+
+### Same rule for ADB forwarding
+
+If you use `adb forward` instead of SSH tunneling, keep the phone side on `tcp:18789` but change the **local** side when your computer already uses `18789`:
+
+```bash
+adb -s <device-serial> forward tcp:28789 tcp:18789
+```
+
 ## Notes
 
 - Termux uses SSH port **8022** (not the standard Linux port 22)
